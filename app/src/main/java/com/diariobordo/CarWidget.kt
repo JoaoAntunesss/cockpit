@@ -70,6 +70,7 @@ class CarWidget : AppWidgetProvider() {
 
         /** Chama quando os dados mudam, para o widget não ficar desatualizado. */
         fun refresh(ctx: Context) {
+            FuelQuickWidget.refresh(ctx)
             val mgr = AppWidgetManager.getInstance(ctx)
             val ids = mgr.getAppWidgetIds(ComponentName(ctx, CarWidget::class.java))
             if (ids.isEmpty()) return

@@ -285,6 +285,7 @@ fun HomeScreen(d: CarData, a: Actions, pad: PaddingValues) {
         if (d.vehicle.monthlyBudget > 0) item { BudgetBar(monthSpend, d.vehicle.monthlyBudget) }
         item { Appear(0) { Hero(d.vehicle, st.avg, monthSpend, a.fixKm, a.editCar) } }
         item { Appear(1) { FocusCard(d, curKm, a) } }
+        item { StartCard(d, a) }
         item { Appear(1) { InsightsCard(d, monthSpend) } }
         kmEst?.let { e ->
             item { KmCard(e.km, d.vehicle.km, onYes = { a.confirmKm(e.km) }, onFix = a.fixKm) }
@@ -1158,6 +1159,40 @@ private fun InsightsCard(d: CarData, monthSpend: Double) {
                     else t("ao ritmo atual", "at the current pace"),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        }
+    }
+}
+
+
+/** Primeiros passos: lista curta que se vai riscando sozinha e que se pode fechar. */
+@Composable
+private fun StartCard(d: CarData, a: Actions) {
+    val ctx = LocalContext.current
+    val sp = remember { ctx.getSharedPreferences("diario", 0) }
+    var hidden by remember { mutableStateOf(sp.getBoolean("tips_off", false)) }
+    val steps = listOf(
+        Triple(t("Regista o primeiro abastecimento", "Log your first refuel"), d.fuelings.isNotEmpty()) { a.create("fuel") },
+        Triple(t("Cria um aviso de manutenção (óleo, correia...)", "Create a maintenance reminder (oil, belt...)"), d.reminders.isNotEmpty()) { a.remNew() },
+        Triple(t("Guarda o seguro ou a inspeção com a data", "Save insurance or inspection with its date"), d.docs.isNotEmpty()) { a.doc(null) },
+        Triple(t("Define o IUC no separador Manutenção", "Set up your road tax in the Maintenance tab"), IucPrefs.month(ctx, d.vehicle.id) in 1..12) { a.goTab(Tab.MAINT) },
+    )
+    val done = steps.count { it.second }
+    if (hidden || done == steps.size) return
+    Card(colors = cardColors(), border = cardBorder(), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(t("Primeiros passos ($done/${steps.size})", "Getting started ($done/${steps.size})"), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                TextButton(onClick = { hidden = true; sp.edit().putBoolean("tips_off", true).apply() }) { Text(t("Fechar", "Close")) }
+            }
+            LinearProgressIndicator(progress = { done / steps.size.toFloat() }, modifier = Modifier.fillMaxWidth())
+            steps.forEach { (label, ok, go) ->
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(enabled = !ok, onClick = go).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(if (ok) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked, null, tint = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.width(12.dp))
+                    Text(label, style = MaterialTheme.typography.bodyMedium, color = if (ok) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        textDecoration = if (ok) androidx.compose.ui.text.style.TextDecoration.LineThrough else null)
+                }
             }
         }
     }

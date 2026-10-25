@@ -18,8 +18,8 @@ android {
         applicationId = "com.cockpit.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.3"
+        versionCode = 7
+        versionName = "1.5"
         // Chave pública do Logo.dev (opcional). Pões em gradle.properties: logoDevKey=pk_xxx
         buildConfigField("String", "LOGO_DEV_KEY", "\"${project.findProperty("logoDevKey") ?: ""}\"")
     }

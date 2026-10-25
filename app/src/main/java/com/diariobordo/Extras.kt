@@ -1,5 +1,6 @@
 package com.diariobordo
 
+import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -155,6 +156,23 @@ fun SettingsSheet(hasCar: Boolean, onPdf: () -> Unit, onCsv: () -> Unit, onImpor
                 )
                 OutlinedButton(onClick = onCompare, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                     Icon(Icons.Filled.Balance, null); Spacer(Modifier.width(8.dp)); Text(tr("Comparar carros"))
+                }
+                OutlinedButton(
+                    onClick = {
+                        try {
+                            if (androidx.core.content.pm.ShortcutManagerCompat.isRequestPinShortcutSupported(ctx)) {
+                                val info = androidx.core.content.pm.ShortcutInfoCompat.Builder(ctx, "pin_fuel")
+                                    .setShortLabel(t("Abastecer", "Refuel"))
+                                    .setIcon(androidx.core.graphics.drawable.IconCompat.createWithResource(ctx, R.mipmap.ic_launcher))
+                                    .setIntent(Intent(ctx, MainActivity::class.java).setAction(Intent.ACTION_VIEW).putExtra("go", "fuel"))
+                                    .build()
+                                androidx.core.content.pm.ShortcutManagerCompat.requestPinShortcut(ctx, info, null)
+                            }
+                        } catch (_: Exception) {}
+                    },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                ) {
+                    Icon(Icons.Filled.LocalGasStation, null); Spacer(Modifier.width(8.dp)); Text(t("Atalho no ecrã: registar abastecimento", "Home-screen shortcut: log a refuel"))
                 }
                 OutlinedButton(onClick = onShared, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                     Icon(Icons.Filled.Group, null); Spacer(Modifier.width(8.dp)); Text(t("Carro partilhado", "Shared car"))

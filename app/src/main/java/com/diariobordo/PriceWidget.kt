@@ -110,10 +110,11 @@ class PriceWidget : AppWidgetProvider() {
 
         private fun render(list: List<FuelPrice>, fav: String, ledArgb: Int): Bitmap {
             val W = 720
-            val rowH = 118
-            val head = 20
+            val head = 78
+            val rowH = 124
+            val foot = 16
             val rows = maxOf(list.size, 1)
-            val H = head + rows * rowH + 46
+            val H = head + rows * rowH + foot
             val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
             val c = Canvas(bmp)
             val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.DEFAULT_BOLD }
@@ -123,30 +124,54 @@ class PriceWidget : AppWidgetProvider() {
                 return bmp
             }
             val amber = Color.parseColor("#FFB020")
+            val color = if (ledArgb != 0) ledArgb else amber
+            // cabeçalho
+            text.color = Color.parseColor("#8A93A3"); text.textSize = 26f; text.textAlign = Paint.Align.LEFT
+            text.letterSpacing = 0.18f
+            c.drawText(t("COMBUSTÍVEIS", "FUEL PRICES"), 28f, 50f, text)
+            text.letterSpacing = 0f; text.typeface = Typeface.DEFAULT; text.textAlign = Paint.Align.RIGHT
+            c.drawText("€/L · " + t("média nacional", "national avg") + (list.firstOrNull()?.date?.let { " · ${it.takeLast(5)}" } ?: ""), W - 28f, 50f, text)
+            val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = Color.parseColor("#22262E"); strokeWidth = 2f }
+            c.drawLine(28f, head - 8f, W - 28f, head - 8f, line)
+            val cheapest = list.minByOrNull { it.avg }
             list.forEachIndexed { i, f ->
                 val top = head + i * rowH
                 val (label, col) = fuelBadge(f)
-                if (f.slug == fav) {
-                    val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#1C1F25") }
-                    c.drawRoundRect(RectF(6f, top + 6f, W - 6f, top + rowH - 6f), 22f, 22f, bg)
-                }
                 val cy = top + rowH / 2f
-                val circle = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = col.toArgb() }
-                c.drawCircle(70f, cy, 42f, circle)
-                text.color = Color.WHITE; text.textSize = if (label.length > 2) 30f else 38f; text.textAlign = Paint.Align.CENTER
-                c.drawText(label, 70f, cy + 13f, text)
+                if (f.slug == fav) {
+                    val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = Color.parseColor("#14181F") }
+                    c.drawRoundRect(RectF(12f, top + 8f, W - 12f, top + rowH - 8f), 24f, 24f, bg)
+                    val bd = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = Color.argb(120, Color.red(color), Color.green(color), Color.blue(color)); style = Paint.Style.STROKE; strokeWidth = 3f }
+                    c.drawRoundRect(RectF(12f, top + 8f, W - 12f, top + rowH - 8f), 24f, 24f, bd)
+                }
+                // emblema
+                val circle = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = col.toArgb() }
+                c.drawCircle(76f, cy, 38f, circle)
+                text.typeface = Typeface.DEFAULT_BOLD; text.color = Color.WHITE; text.textSize = if (label.length > 2) 28f else 36f; text.textAlign = Paint.Align.CENTER
+                c.drawText(label, 76f, cy + 12f, text)
+                // nome e intervalo de preços
+                text.textAlign = Paint.Align.LEFT; text.color = Color.parseColor("#E7EAF0"); text.textSize = 30f
+                val nm = fuelLabel(f).let { if (it.length > 18) it.take(17) + "…" else it }
+                c.drawText(nm, 138f, cy - 4f, text)
+                text.typeface = Typeface.DEFAULT; text.color = Color.parseColor("#7C8594"); text.textSize = 24f
+                c.drawText(String.format(PT, "%.2f – %.2f €", f.min, f.max), 138f, cy + 30f, text)
+                if (f === cheapest && list.size > 1) {
+                    val chip = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = Color.parseColor("#1B3B26") }
+                    c.drawRoundRect(RectF(138f, cy - 52f, 138f + 118f, cy - 28f), 12f, 12f, chip)
+                    text.typeface = Typeface.DEFAULT_BOLD; text.color = Color.parseColor("#4ADE80"); text.textSize = 18f
+                    c.drawText(t("MAIS BARATO", "CHEAPEST"), 148f, cy - 33f, text)
+                }
+                // preço em LED
                 val txt = String.format(PT, "%.3f", f.avg)
-                val color = if (ledArgb != 0) ledArgb else amber
-                val big = 78f; val small = 46f
+                val big = 70f; val small = 40f
                 val wBig = LedDraw.widthOf(txt.dropLast(1), big)
                 val wSmall = LedDraw.widthOf(txt.takeLast(1), small)
                 val total = wBig + 10f + wSmall
-                val x = W - 40f - total
-                LedDraw.draw(c, txt.dropLast(1), color, x, cy - big / 2 - 4f, big)
-                LedDraw.draw(c, txt.takeLast(1), color, x + wBig + 10f, cy + big / 2 - small - 4f + 4f, small)
+                val x = W - 34f - total
+                LedDraw.draw(c, txt.dropLast(1), color, x, cy - big / 2 - 2f, big)
+                LedDraw.draw(c, txt.takeLast(1), color, x + wBig + 10f, cy + big / 2 - small - 2f + 4f, small)
+                if (i < list.lastIndex && f.slug != fav) c.drawLine(28f, top + rowH.toFloat(), W - 28f, top + rowH.toFloat(), line)
             }
-            text.color = Color.parseColor("#6F7785"); text.textSize = 26f; text.textAlign = Paint.Align.LEFT; text.typeface = Typeface.DEFAULT
-            c.drawText("€/L · " + t("média nacional", "national average") + (list.firstOrNull()?.date?.let { " · $it" } ?: ""), 22f, H - 14f, text)
             return bmp
         }
 
