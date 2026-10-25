@@ -56,7 +56,7 @@ class Snapshot(
 )
 
 object Cloud {
-    /** Só funciona se puseres o google-services.json na pasta app (ver LEIAME). */
+    /** Only works if google-services.json is placed in the app folder (see GUIDE.md). */
     fun configured(ctx: Context): Boolean = try { FirebaseApp.getApps(ctx).isNotEmpty() } catch (e: Throwable) { false }
 
     private fun webClientId(ctx: Context): String? {

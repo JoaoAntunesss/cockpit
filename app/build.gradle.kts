@@ -5,7 +5,7 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-// O login Google só liga se existir o ficheiro google-services.json (ver LEIAME). Sem ele a app compila na mesma.
+// Google sign-in is only enabled if google-services.json exists (see GUIDE.md). Without it the app still builds.
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }

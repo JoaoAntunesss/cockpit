@@ -1,50 +1,50 @@
 # Cockpit
 
-Diário de bordo para o teu carro, em Android. Consumos, manutenção, despesas, prazos, preços dos combustíveis e parques de estacionamento, tudo no telemóvel e com as cores da marca do teu carro.
+A logbook for your car, on Android. Fuel consumption, maintenance, expenses, deadlines, fuel prices and parking spots, all on your phone and themed with your car brand's colours.
 
-[**Descarregar a última versão (APK)**](https://github.com/JoaoAntunesss/cockpit/releases/latest)
+[**Download the latest version (APK)**](https://github.com/JoaoAntunesss/cockpit/releases/latest)
 
-## O que faz
+## Features
 
-- **Combustível:** regista abastecimentos (também parciais) e calcula o consumo real. Avisa de valores estranhos (km, preço, duplicados) e mostra como cada abastecimento se compara com a tua média. Aceita elétricos e híbridos (incluindo plug-in).
-- **Manutenção:** avisos por km e por tempo (óleo, correia, pneus...), diário de intervenções com fotos de faturas e estimativa de custo da próxima.
-- **Prazos:** seguro, inspeção e IUC, com avisos mesmo com a app fechada. O IUC segue o calendário novo (2026, 2027 e 2028 em diante).
-- **Gastos:** gráficos por mês, custo por km, previsão do mês, orçamento mensal, resumo do ano e relatório anual em PDF.
-- **Preços:** média nacional por combustível (DGEG) com o totem de LEDs, alerta quando baixa e postos e carregadores perto de ti.
-- **Parque:** guarda onde estacionaste, leva-te de volta ao carro e procura parques por perto.
-- **Widgets:** o teu carro, preços dos combustíveis, "Abastecer" com um toque e avisos.
-- **Cartões:** cartões de combustível e fidelidade com código de barras.
-- **Extras:** carro partilhado, comunidade, pesquisa nos históricos, bloqueio com o PIN ou impressão digital do telemóvel, backup em ficheiro e na nuvem, importação por CSV, relatório para venda do carro, português e inglês.
-- **Atualização pela app:** Definições > Procurar atualizações.
+- **Fuel:** log refuels (partial ones too) and get your real consumption. Flags odd values (km, price, duplicates) and shows how each refuel compares with your average. Supports electric and hybrid cars (plug-in included).
+- **Maintenance:** reminders by km and by time (oil, timing belt, tyres...), a service diary with invoice photos and a cost estimate for the next one.
+- **Deadlines:** insurance, inspection and road tax (IUC), with alerts even when the app is closed. IUC follows the new calendar (2026, 2027 and 2028 onwards).
+- **Expenses:** monthly charts, cost per km, month forecast, monthly budget, year summary and a yearly PDF report.
+- **Prices:** national average per fuel (DGEG) shown on an LED price sign, price-drop alerts, and fuel stations and chargers near you.
+- **Parking:** save where you parked, get guided back to the car and search nearby car parks.
+- **Widgets:** your car, fuel prices, one-tap "Refuel" and reminders.
+- **Cards:** fuel and loyalty cards with barcodes.
+- **Extras:** shared car, community, search in your histories, lock with your phone's PIN or fingerprint, backup to a file and to the cloud, CSV import, car sale report, Portuguese and English.
+- **In-app updates:** Settings > Check for updates.
 
-<!-- Capturas: junta PNGs em docs/screenshots e escreve aqui, por exemplo:
-<img src="docs/screenshots/inicio.png" width="240"> -->
+<!-- Screenshots: add PNGs to docs/screenshots and reference them here, for example:
+<img src="docs/screenshots/home.png" width="240"> -->
 
-## Instalar
+## Install
 
-1. Abre a página de [Releases](https://github.com/JoaoAntunesss/cockpit/releases) no telemóvel e descarrega o `cockpit.apk`.
-2. Abre o ficheiro. O Android pede para permitir instalar apps desconhecidas: aceita.
-3. Das vezes seguintes, a app atualiza-se sozinha por Definições > Procurar atualizações.
+1. Open the [Releases](https://github.com/JoaoAntunesss/cockpit/releases) page on your phone and download `cockpit.apk`.
+2. Open the file. Android asks you to allow installing unknown apps: accept.
+3. From then on the app updates itself through Settings > Check for updates.
 
-## Compilar
+## Build
 
-Requisitos: Android Studio recente, JDK 17.
+Requirements: a recent Android Studio and JDK 17.
 
-1. Abre a pasta no Android Studio e deixa o Gradle sincronizar.
-2. Opcional: para o login Google e a cópia na nuvem, cria um projeto Firebase e põe o teu `google-services.json` em `app/` (nunca o envies para o GitHub; já está no `.gitignore`). Sem ele, a app compila e funciona só com os dados locais.
-3. Opcional: chave pública do Logo.dev em `gradle.properties` (`logoDevKey=...`).
+1. Open the folder in Android Studio and let Gradle sync.
+2. Optional: for Google sign-in and cloud backup, create a Firebase project and put your `google-services.json` in `app/` (never commit it; it is already in `.gitignore`). Without it the app still builds and works with local data only.
+3. Optional: put your public Logo.dev key in `gradle.properties` (`logoDevKey=...`).
 4. Run.
 
-Mais detalhes em [LEIAME.md](LEIAME.md). Publicar versões novas: [ATUALIZACOES.md](ATUALIZACOES.md). As regras da base de dados estão em [REGRAS_FIREBASE.json](REGRAS_FIREBASE.json).
+More details in [GUIDE.md](GUIDE.md). Publishing new versions: [UPDATES.md](UPDATES.md). Google Play checklist: [PLAY_STORE.md](PLAY_STORE.md). Database rules: [REGRAS_FIREBASE.json](REGRAS_FIREBASE.json).
 
-## Tecnologia
+## Tech stack
 
-Kotlin, Jetpack Compose (Material 3), Room, WorkManager, Firebase (Auth e Realtime Database), OpenStreetMap (osmdroid e Overpass), ML Kit (leitura de faturas) e Coil.
+Kotlin, Jetpack Compose (Material 3), Room, WorkManager, Firebase (Auth and Realtime Database), OpenStreetMap (osmdroid and Overpass), ML Kit (invoice scanning) and Coil.
 
-## Privacidade
+## Privacy
 
-Os dados ficam no telemóvel. Só saem se entrares com Google e ligares a cópia na nuvem, ou se usares a comunidade ou o carro partilhado. A localização é usada só para postos, carregadores e parques por perto, e para te levar ao carro.
+Your data stays on your phone. It only leaves if you sign in with Google and turn on cloud backup, or if you use the community or the shared car. Location is used only for nearby stations, chargers and car parks, and to take you back to your car.
 
-## Créditos
+## Credits
 
-Mapas © colaboradores do OpenStreetMap. Preços dos combustíveis: DGEG. Símbolos das marcas: Simple Icons e Logo.dev.
+Maps © OpenStreetMap contributors. Fuel prices: DGEG (Portugal). Brand icons: Simple Icons and Logo.dev.
