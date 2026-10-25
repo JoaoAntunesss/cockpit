@@ -1,0 +1,110 @@
+{
+  "rules": {
+    "diarioBordo": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "usernames": {
+      "$nick": {
+        ".read": "auth != null",
+        ".write": "auth != null && $nick.matches(/^[a-z0-9_.]{3,20}$/) && (!data.exists() || data.val() === auth.uid) && (!newData.exists() || newData.val() === auth.uid)"
+      }
+    },
+    "profiles": {
+      ".indexOn": [
+        "nick"
+      ],
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && ((auth.uid === $uid && !root.child('bans').child($uid).exists()) || root.child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.hasChildren(['nick', 'adult', 'cars'])",
+        "nick": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9_.]{3,20}$/)"
+        },
+        "adult": {
+          ".validate": "newData.val() === true"
+        },
+        "bio": {
+          ".validate": "newData.isString() && newData.val().length <= 140"
+        }
+      }
+    },
+    "requests": {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".read": "auth != null && auth.uid === $from",
+          ".write": "auth != null && (auth.uid === $to || (auth.uid === $from && $to !== $from && !data.exists() && newData.child('status').val() === 'pending' && !root.child('blocks').child($to).child(auth.uid).exists()))"
+        }
+      }
+    },
+    "chats": {
+      "$cid": {
+        ".read": "auth != null && (data.child('a').val() === auth.uid || data.child('b').val() === auth.uid)",
+        ".write": "auth != null && !data.exists() && newData.child('b').val() === auth.uid && newData.child('a').val() !== auth.uid && $cid === newData.child('a').val() + '_' + auth.uid && root.child('requests').child(auth.uid).child(newData.child('a').val()).child('status').val() === 'pending'",
+        "messages": {
+          "$mid": {
+            ".write": "auth != null && !data.exists() && newData.child('from').val() === auth.uid && (root.child('chats').child($cid).child('a').val() === auth.uid || root.child('chats').child($cid).child('b').val() === auth.uid) && !root.child('blocks').child(root.child('chats').child($cid).child('a').val() === auth.uid ? root.child('chats').child($cid).child('b').val() : root.child('chats').child($cid).child('a').val()).child(auth.uid).exists()",
+            ".validate": "newData.hasChildren(['from', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 1000"
+          }
+        }
+      }
+    },
+    "userChats": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$cid": {
+          ".write": "auth != null && (auth.uid === $uid || (root.child('chats').child($cid).child('b').val() === auth.uid && root.child('chats').child($cid).child('a').val() === $uid))"
+        }
+      }
+    },
+    "blocks": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "reports": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$rid": {
+        ".write": "auth != null && ((!data.exists() && newData.child('by').val() === auth.uid) || root.child('admins').child(auth.uid).val() === true)"
+      },
+      ".indexOn": [
+        "ts"
+      ]
+    },
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+    "bans": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+      }
+    },
+    "shared": {
+      "$code": {
+        ".read": "auth != null && data.child('members').child(auth.uid).exists()",
+        "name": {
+          ".write": "auth != null && (!data.exists() || root.child('shared').child($code).child('members').child(auth.uid).exists())"
+        },
+        "members": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        },
+        "data": {
+          ".write": "auth != null && root.child('shared').child($code).child('members').child(auth.uid).exists()",
+          ".validate": "newData.isString() && newData.val().length < 1500000"
+        },
+        "updatedAt": {
+          ".write": "auth != null && root.child('shared').child($code).child('members').child(auth.uid).exists()"
+        }
+      }
+    }
+  }
+}
