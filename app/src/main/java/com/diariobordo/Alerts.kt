@@ -65,6 +65,15 @@ class AlertWorker(ctx: Context, p: WorkerParameters) : CoroutineWorker(ctx, p) {
             }
             val reminders = dao.reminders(v.id).first()
             val data = CarData(v, dao.fuelings(v.id).first(), dao.services(v.id).first(), dao.expenses(v.id).first(), reminders)
+            if (!isEv(v.fuelType)) {
+                val stc = fuelStats(data.liquid())
+                val pct = stc.trendPct
+                if (pct != null && pct >= 15) {
+                    val lastId = data.liquid().maxByOrNull { it.date }?.id ?: 0L
+                    out += Msg("cons${v.id}_$lastId", "${v.name}: " + t("consumo anormal", "unusual consumption"),
+                        t("Nos últimos 3 abastecimentos gastaste ${fmt(pct, 0)}% mais. Vê a pressão dos pneus, os filtros e se há alguma fuga.", "Over the last 3 refuels you used ${fmt(pct, 0)}% more. Check tyre pressure, filters and any leaks."))
+                }
+            }
             if (v.monthlyBudget > 0) {
                 val spent = monthSpend(data)
                 val ym = java.time.YearMonth.now()

@@ -205,3 +205,9 @@ Adicionados em res/drawable-nodpi: BYD, Lexus, Jaguar, Land Rover, Alfa Romeo, C
 
 ## Batch M
 - Atualização pela app via GitHub (ver ATUALIZACOES.md). Versão 1.1 (código 3). Permissão REQUEST_INSTALL_PACKAGES e FileProvider para updates/.
+
+## Batch N
+- Versão 1.2: cartão "Custo por km" e "Previsão do mês" no ecrã inicial.
+
+## Batch O
+- Versão 1.3: alerta de consumo anormal (notificação e cartão no ecrã inicial quando o consumo sobe 15% ou mais).
