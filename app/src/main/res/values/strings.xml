@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sc_fuel">Abastecer</string>
+    <string name="sc_serv">Intervenção</string>
+    <string name="sc_exp">Despesa</string>
+    <string name="sc_map">Postos e mapa</string>
+</resources>

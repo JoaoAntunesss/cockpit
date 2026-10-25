@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="fuel" android:enabled="true" android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/sc_fuel" android:shortcutLongLabel="@string/sc_fuel">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.cockpit.app" android:targetClass="com.diariobordo.MainActivity">
+            <extra android:name="go" android:value="fuel" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="serv" android:enabled="true" android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/sc_serv" android:shortcutLongLabel="@string/sc_serv">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.cockpit.app" android:targetClass="com.diariobordo.MainActivity">
+            <extra android:name="go" android:value="serv" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="exp" android:enabled="true" android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/sc_exp" android:shortcutLongLabel="@string/sc_exp">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.cockpit.app" android:targetClass="com.diariobordo.MainActivity">
+            <extra android:name="go" android:value="exp" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="map" android:enabled="true" android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/sc_map" android:shortcutLongLabel="@string/sc_map">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.cockpit.app" android:targetClass="com.diariobordo.MainActivity">
+            <extra android:name="go" android:value="map" />
+        </intent>
+    </shortcut>
+</shortcuts>
