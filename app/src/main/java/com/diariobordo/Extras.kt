@@ -96,6 +96,7 @@ fun SettingsSheet(hasCar: Boolean, onPdf: () -> Unit, onCsv: () -> Unit, onImpor
     var notif by remember { mutableStateOf(KmPrefs.notifOn(ctx)) }
     var est by remember { mutableStateOf(KmPrefs.on(ctx)) }
     var priceOn by remember { mutableStateOf(KmPrefs.priceOn(ctx)) }
+    var lockOn by remember { mutableStateOf(AppLock.enabled(ctx)) }
     var restoreArmed by remember { mutableStateOf(false) }
     ModalBottomSheet(onDismissRequest = onClose) {
         Column(
@@ -183,6 +184,14 @@ fun SettingsSheet(hasCar: Boolean, onPdf: () -> Unit, onCsv: () -> Unit, onImpor
                 t("Compara o preço médio nacional do teu combustível algumas vezes por dia e avisa se descer 1 cêntimo ou mais.", "Checks the national average price of your fuel a few times a day and alerts you if it drops by 1 cent or more."),
                 priceOn,
             ) { priceOn = it; KmPrefs.set(ctx, "price_on", it) }
+            SettingSwitch(
+                t("Bloquear a app", "Lock the app"),
+                t("Pede o PIN, o padrão ou a impressão digital do telemóvel ao abrir, e depois de 30 segundos fora da app. Precisa de um bloqueio de ecrã definido no telemóvel.", "Asks for your phone's PIN, pattern or fingerprint when opening, and after 30 seconds away. Needs a screen lock set on your phone."),
+                lockOn,
+            ) {
+                if (it && !AppLock.secure(ctx)) android.widget.Toast.makeText(ctx, t("Define primeiro um bloqueio de ecrã nas definições do telemóvel.", "Set a screen lock in your phone settings first."), android.widget.Toast.LENGTH_LONG).show()
+                else { lockOn = it; AppLock.setEnabled(ctx, it) }
+            }
             HorizontalDivider()
             Text(t("Cópia de segurança no telemóvel", "Backup on this phone"), style = MaterialTheme.typography.titleSmall)
             Text(

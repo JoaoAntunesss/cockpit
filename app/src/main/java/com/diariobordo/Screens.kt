@@ -66,7 +66,7 @@ class Actions(
     val editCar: () -> Unit = {},
 )
 
-private val Gap = Arrangement.spacedBy(12.dp)
+private val Gap = Arrangement.spacedBy(16.dp)
 
 @Composable
 private fun cardColors() = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
@@ -79,7 +79,7 @@ private fun cardBorder() = BorderStroke(
 
 @Composable
 private fun SectionTitle(text: String, action: String? = null, onAction: () -> Unit = {}) {
-    Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(width = 4.dp, height = 16.dp).background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary))))
         Spacer(Modifier.width(10.dp))
         Text(text.uppercase(), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.6.sp, modifier = Modifier.weight(1f))
@@ -165,7 +165,7 @@ private fun BudgetBar(spent: Double, budget: Double) {
     val over = spent > budget
     val color = if (over) Color(0xFFFF6B6B) else if (spent >= budget * 0.8) Color(0xFFF5B73B) else MaterialTheme.colorScheme.primary
     Card(colors = cardColors(), border = cardBorder(), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row {
                 Text(t("Orçamento do mês", "Monthly budget"), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 Text("${eur(spent)} / ${eur(budget)}", color = color, fontWeight = FontWeight.Bold)
@@ -295,7 +295,7 @@ fun HomeScreen(d: CarData, a: Actions, pad: PaddingValues) {
                 val up = pct > 5
                 val down = pct < -5
                 Card(colors = cardColors(), border = cardBorder(), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Icon(if (up) Icons.Filled.Warning else Icons.Filled.CheckCircle, null)
                         Text(
                             when {
@@ -544,6 +544,7 @@ private fun SegBar(progress: Float, color: Color, modifier: Modifier = Modifier)
 fun FuelScreen(d: CarData, a: Actions, pad: PaddingValues, prices: PricesState, onRefresh: () -> Unit) {
     val st = remember(d.fuelings) { fuelStats(d.liquid()) }
     val chart = st.measured.takeLast(14)
+    var q by rememberSaveable { mutableStateOf("") }
     LazyColumn(
         contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 88.dp),
         verticalArrangement = Gap,
@@ -605,11 +606,14 @@ fun FuelScreen(d: CarData, a: Actions, pad: PaddingValues, prices: PricesState, 
             }
         }
         item { SectionTitle(tr("Histórico")) }
+        if (d.fuelings.size >= 5) item { SearchBar(q, { q = it }) }
         item {
             Card(colors = cardColors(), border = cardBorder(), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
                 Column {
                     val byId = st.rows.associateBy { it.f.id }
                     val all = (st.rows.map { it.f } + d.fuelings.filter { it.electric }).sortedWith(compareBy({ it.date }, { it.km })).reversed()
+                        .filter { matchesQuery(q, it.station, dateLabel(it.date), docDate(it.date), it.km.toString(), fmt(it.total), fmt(it.liters)) }
+                    if (all.isEmpty() && q.isNotBlank()) Text(t("Nada encontrado.", "Nothing found."), Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     all.forEach { e ->
                         val r = byId[e.id]
                         val uq = unitOf(e, d.vehicle.fuelType)
@@ -701,7 +705,7 @@ private fun PriceCard(fuelType: String, ps: PricesState, onRefresh: () -> Unit, 
     val frame = Color(0xFF2A2D33)
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF050506))
-            .border(2.dp, frame, RoundedCornerShape(18.dp)).padding(14.dp),
+            .border(2.dp, frame, RoundedCornerShape(18.dp)).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -786,6 +790,7 @@ fun MaintScreen(d: CarData, a: Actions, pad: PaddingValues) {
     val kmEst = if (KmPrefs.on(kmCtx)) estimateKm(d, KmPrefs.day(kmCtx, d.vehicle.id)) else null
     val curKm = kmEst?.km ?: d.vehicle.km
     val rems = d.reminders.sortedByDescending { remInfo(it, curKm).progress }
+    var q by rememberSaveable { mutableStateOf("") }
     LazyColumn(
         contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 88.dp),
         verticalArrangement = Gap,
@@ -815,11 +820,14 @@ fun MaintScreen(d: CarData, a: Actions, pad: PaddingValues) {
             }
         }
         item { SectionTitle(tr("Diário de intervenções")) }
+        if (d.services.size >= 5) item { SearchBar(q, { q = it }) }
         item {
             if (d.services.isEmpty()) Empty(Icons.Filled.Build, tr("Ainda sem intervenções. Regista a primeira com o botão Intervenção."), tr("Registar intervenção")) { a.create("serv") }
             else Card(colors = cardColors(), border = cardBorder(), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
                 Column {
-                    d.services.forEach { s ->
+                    val shown = d.services.filter { matchesQuery(q, it.title, it.category, it.shop, it.notes, dateLabel(it.date), docDate(it.date)) }
+                    if (shown.isEmpty()) Text(t("Nada encontrado.", "Nothing found."), Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    shown.forEach { s ->
                         key(s.id) { SwipeDelete({ a.del(s) }) { Row3(
                             Icons.Filled.Build, s.title,
                             "${dateLabel(s.date)} · ${fint(s.km)} km · " + if (s.byMe) tr("Feito por mim") else s.shop.ifBlank { tr("Oficina") },
@@ -864,6 +872,7 @@ private fun OwnershipCard(d: CarData) {
 @Composable
 fun CostsScreen(d: CarData, pad: PaddingValues, openYear: () -> Unit, delExp: (Expense) -> Unit, openExp: (Expense) -> Unit) {
     var period by rememberSaveable { mutableIntStateOf(6) }
+    var q by rememberSaveable { mutableStateOf("") }
     val months = remember(d, period) { monthly(d, period) }
     val fuel = months.sumOf { it.fuel }
     val mech = months.sumOf { it.mech }
@@ -917,10 +926,11 @@ fun CostsScreen(d: CarData, pad: PaddingValues, openYear: () -> Unit, delExp: (E
             }
         }
         item { SectionTitle(tr("Despesas fixas")) }
+        if (d.expenses.size >= 5) item { SearchBar(q, { q = it }) }
         item {
             if (d.expenses.isEmpty()) Empty(Icons.Filled.Receipt, tr("Sem despesas registadas."))
             else Card(colors = cardColors(), border = cardBorder(), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
-                Column { d.expenses.take(8).forEach { e -> key(e.id) { SwipeDelete({ delExp(e) }) { Row3(Icons.Filled.Receipt, e.type, dateLabel(e.date), eur(e.amount)) { openExp(e) } } } } }
+                Column { d.expenses.filter { matchesQuery(q, it.type, dateLabel(it.date), docDate(it.date), fmt(it.amount)) }.let { if (q.isBlank()) it.take(8) else it }.forEach { e -> key(e.id) { SwipeDelete({ delExp(e) }) { Row3(Icons.Filled.Receipt, e.type, dateLabel(e.date), eur(e.amount)) { openExp(e) } } } } }
             }
         }
     }

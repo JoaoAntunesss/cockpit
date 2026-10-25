@@ -217,3 +217,9 @@ Adicionados em res/drawable-nodpi: BYD, Lexus, Jaguar, Land Rover, Alfa Romeo, C
 
 ## Batch Q
 - Versão 1.5: widget "Abastecer" (2x1, um toque abre o formulário) e widget de preços redesenhado (nome do combustível, intervalo min–max, etiqueta "mais barato", cabeçalho com data).
+
+## Batch R
+- Versão 1.6: pesquisa nos históricos (combustível, intervenções, despesas; aparece com 5+ registos), bloqueio opcional da app com o PIN/padrão/impressão digital do telemóvel (Definições), widget "Avisos" (manutenção e prazos mais urgentes).
+
+## Batch S
+- Versão 1.7: passagem visual com a skill mobile-app-ui-design: espaçamentos na grelha de 8/16 (cartões 16, espaço entre blocos 16), momento de recompensa ao guardar um abastecimento (mostra o consumo e como se compara com a tua média).
