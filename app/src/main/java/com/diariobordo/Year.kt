@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +19,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.LocalDate
 import java.time.YearMonth
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.graphics.pdf.PdfDocument
+import java.io.File
 
 class YearSummary(
     val year: Int, val total: Double, val fuel: Double, val mech: Double, val fixed: Double, val km: Int,
@@ -101,6 +109,85 @@ fun YearSheet(d: CarData, onClose: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) { Icon(Icons.Filled.Share, null); Spacer(Modifier.width(8.dp)); Text(t("Partilhar resumo", "Share summary")) }
+            OutlinedButton(
+                onClick = { try { Export.share(ctx, YearReport.pdf(ctx, d, year), "application/pdf") } catch (_: Exception) {} },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) { Icon(Icons.Filled.PictureAsPdf, null); Spacer(Modifier.width(8.dp)); Text(t("Relatório anual (PDF)", "Annual report (PDF)")) }
         }
+    }
+}
+
+
+/** Relatório anual em PDF: totais por categoria, mês a mês e lista de despesas e intervenções. */
+object YearReport {
+    fun pdf(ctx: Context, d: CarData, year: Int): File {
+        val y = yearSummary(d, year)
+        val v = d.vehicle
+        val doc = PdfDocument()
+        val paint = Paint().apply { isAntiAlias = true }
+        var page: PdfDocument.Page? = null
+        var canvas: Canvas? = null
+        var yy = 0f
+        var no = 0
+        fun newPage() {
+            page?.let { doc.finishPage(it) }
+            no++
+            page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, no).create())
+            canvas = page!!.canvas
+            yy = 56f
+        }
+        fun line(left: String, right: String = "", size: Float = 11f, bold: Boolean = false, color: Int = Color.BLACK) {
+            if (page == null || yy > 790f) newPage()
+            paint.textSize = size
+            paint.typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+            paint.color = color
+            paint.textAlign = Paint.Align.LEFT
+            canvas!!.drawText(if (left.length > 70) left.take(69) + "…" else left, 40f, yy, paint)
+            if (right.isNotBlank()) { paint.textAlign = Paint.Align.RIGHT; canvas!!.drawText(right, 555f, yy, paint) }
+            yy += size + 7f
+        }
+        newPage()
+        line(t("Relatório anual $year", "Annual report $year"), size = 22f, bold = true)
+        line(listOf(v.name, Brand.of(v.brand).label, v.model).filter { it.isNotBlank() }.distinct().joinToString(" · "), size = 14f, bold = true)
+        line(t("Gerado em ", "Generated on ") + docDate(LocalDate.now().toEpochDay()), size = 9f, color = Color.GRAY)
+        yy += 8f
+        line(t("Resumo", "Summary"), size = 13f, bold = true)
+        line(t("Total gasto", "Total spent"), eur(y.total), bold = true)
+        line(t("Combustível", "Fuel"), eur(y.fuel))
+        line(t("Mecânica", "Maintenance"), eur(y.mech))
+        line(t("Despesas fixas", "Fixed expenses"), eur(y.fixed))
+        if (y.km > 0) line(t("Quilómetros no ano", "Kilometres in the year"), fint(y.km) + " km")
+        y.avg?.let { line(t("Consumo médio", "Average consumption"), fmt(it) + " " + consUnit(v.fuelType) + " km") }
+        y.costPerKm?.let { line(t("Custo por km", "Cost per km"), fmt(it, 3) + " €") }
+        yy += 8f
+        line(t("Mês a mês", "Month by month"), size = 13f, bold = true)
+        for (m in 1..12) {
+            val ym = YearMonth.of(year, m)
+            fun inM(day: Long) = YearMonth.from(LocalDate.ofEpochDay(day)) == ym
+            val tot = d.fuelings.filter { inM(it.date) }.sumOf { it.total } + d.services.filter { inM(it.date) }.sumOf { it.parts + it.labor } + d.expenses.filter { inM(it.date) }.sumOf { it.amount }
+            if (tot > 0) line(ym.month.getDisplayName(java.time.format.TextStyle.FULL, PT).replaceFirstChar { it.uppercase() }, eur(tot))
+        }
+        yy += 8f
+        val svc = d.services.filter { LocalDate.ofEpochDay(it.date).year == year }.sortedBy { it.date }
+        line(t("Intervenções", "Services") + " (${svc.size})", size = 13f, bold = true)
+        if (svc.isEmpty()) line(t("Sem registos.", "No records."))
+        svc.forEach { line("${docDate(it.date)} · ${it.title}", eur(it.parts + it.labor)) }
+        yy += 8f
+        val exp = d.expenses.filter { LocalDate.ofEpochDay(it.date).year == year }.sortedBy { it.date }
+        line(t("Despesas", "Expenses") + " (${exp.size})", size = 13f, bold = true)
+        if (exp.isEmpty()) line(t("Sem registos.", "No records."))
+        exp.forEach { line("${docDate(it.date)} · ${it.type}", eur(it.amount)) }
+        yy += 8f
+        val fu = d.fuelings.filter { LocalDate.ofEpochDay(it.date).year == year }.sortedBy { it.date }
+        line(t("Abastecimentos", "Refuels") + " (${fu.size})", size = 13f, bold = true)
+        fu.forEach { line("${docDate(it.date)} · ${fmt(it.liters)} ${unitOf(it, v.fuelType)} · ${fint(it.km)} km", eur(it.total)) }
+        yy += 10f
+        line(t("Gerado pela app Cockpit a partir dos registos do proprietário. Não substitui as faturas.", "Generated by the Cockpit app from the owner's records. It does not replace invoices."), size = 9f, color = Color.GRAY)
+        page?.let { doc.finishPage(it) }
+        val dir = File(ctx.cacheDir, "export").apply { mkdirs() }
+        val f = File(dir, "cockpit_${year}_${v.name.replace(Regex("[^A-Za-z0-9]+"), "_")}.pdf")
+        f.outputStream().use { doc.writeTo(it) }
+        doc.close()
+        return f
     }
 }

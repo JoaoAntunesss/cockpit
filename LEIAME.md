@@ -211,3 +211,9 @@ Adicionados em res/drawable-nodpi: BYD, Lexus, Jaguar, Land Rover, Alfa Romeo, C
 
 ## Batch O
 - Versão 1.3: alerta de consumo anormal (notificação e cartão no ecrã inicial quando o consumo sobe 15% ou mais).
+
+## Batch P
+- Versão 1.4: cartão "Primeiros passos" no ecrã inicial (4 passos, risca sozinho, pode fechar), relatório anual em PDF (Resumo do ano > Relatório anual), atalho para o ecrã do telemóvel (Definições). Os atalhos de pressão longa no ícone já existiam.
+
+## Batch Q
+- Versão 1.5: widget "Abastecer" (2x1, um toque abre o formulário) e widget de preços redesenhado (nome do combustível, intervalo min–max, etiqueta "mais barato", cabeçalho com data).
