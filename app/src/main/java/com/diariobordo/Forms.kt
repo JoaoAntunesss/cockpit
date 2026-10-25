@@ -8,6 +8,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.*
 import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
@@ -41,25 +47,81 @@ fun FormSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         var armed by remember { mutableStateOf(false) }
-        Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp).imePadding(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(title, style = MaterialTheme.typography.headlineSmall)
-            content()
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                if (onDelete != null) {
-                    OutlinedButton(
-                        onClick = { if (armed) onDelete() else armed = true },
-                        modifier = Modifier.weight(1f).height(52.dp),
-                    ) { Text(if (armed) tr("Confirmar: apagar") else tr("Apagar")) }
-                }
-                Button(onClick = onSave, modifier = Modifier.weight(1f).height(52.dp)) { Text(tr("Guardar")) }
+        Column(Modifier.fillMaxWidth().imePadding()) {
+            // Cabeçalho fixo
+            Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+                IconButton(onClick = onClose) { Icon(Icons.Filled.Close, tr("Fechar")) }
             }
-            if (onSaveNext != null) {
-                OutlinedButton(onClick = onSaveNext, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text(t("Guardar e adicionar outro", "Save and add another")) }
+            // Campos: só esta parte desliza
+            Column(
+                Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) { content() }
+            // Ações sempre visíveis
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    if (onDelete != null) {
+                        OutlinedButton(
+                            onClick = { if (armed) onDelete() else armed = true },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            modifier = Modifier.weight(1f).height(52.dp),
+                        ) { Text(if (armed) tr("Confirmar: apagar") else tr("Apagar")) }
+                    }
+                    Button(onClick = onSave, modifier = Modifier.weight(if (onDelete != null) 1.4f else 1f).height(52.dp)) { Text(tr("Guardar")) }
+                }
+                if (onSaveNext != null) {
+                    TextButton(onClick = onSaveNext, modifier = Modifier.fillMaxWidth()) { Text(t("Guardar e adicionar outro", "Save and add another")) }
+                }
             }
         }
+    }
+}
+
+/** Grupo de campos num cartão, com título. Todos os formulários usam o mesmo. */
+@Composable
+fun FormSection(title: String? = null, content: @Composable ColumnScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (title != null) Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp))
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surfaceContainer).padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
+    }
+}
+
+/** Interruptor com título e explicação curta. */
+@Composable
+fun FormSwitch(title: String, desc: String? = null, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            if (desc != null) Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.width(12.dp))
+        Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+/** Campo de escolha (data, lista) com o mesmo aspeto dos campos de texto. */
+@Composable
+private fun FieldBox(label: String, value: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape)
+            .border(1.dp, MaterialTheme.colorScheme.outline, shape).clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Spacer(Modifier.width(8.dp))
+        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -70,9 +132,9 @@ fun NumField(
 ) {
     OutlinedTextField(
         value = value, onValueChange = onChange, label = { Text(label) }, singleLine = true,
-        isError = isError, modifier = modifier.fillMaxWidth(),
+        isError = isError, modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
         keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number),
-        supportingText = { if (isError) Text(tr("Confirma este valor")) else if (hint != null) Text(hint) },
+        supportingText = { if (isError) Text(tr("Confirma este valor")) else if (!hint.isNullOrBlank()) Text(hint) },
     )
 }
 
@@ -83,7 +145,7 @@ fun TxtField(
 ) {
     OutlinedTextField(
         value = value, onValueChange = onChange, label = { Text(label) }, singleLine = true,
-        isError = isError, modifier = modifier.fillMaxWidth(),
+        isError = isError, modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
         supportingText = { if (isError) Text(tr("Preenche este campo")) },
     )
 }
@@ -92,11 +154,7 @@ fun TxtField(
 @Composable
 fun DateField(label: String, value: LocalDate, modifier: Modifier = Modifier, onChange: (LocalDate) -> Unit) {
     var open by remember { mutableStateOf(false) }
-    OutlinedButton(onClick = { open = true }, modifier = modifier.fillMaxWidth().height(56.dp)) {
-        Icon(Icons.Filled.DateRange, null)
-        Spacer(Modifier.width(8.dp))
-        Text("$label: ${dateLabel(value.toEpochDay())}", modifier = Modifier.weight(1f))
-    }
+    FieldBox(label, dateLabel(value.toEpochDay()), Icons.Filled.DateRange, modifier) { open = true }
     if (open) {
         val st = rememberDatePickerState(initialSelectedDateMillis = value.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
         DatePickerDialog(
@@ -116,10 +174,7 @@ fun DateField(label: String, value: LocalDate, modifier: Modifier = Modifier, on
 fun PickField(label: String, value: String, options: List<String>, modifier: Modifier = Modifier, onChange: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box(modifier.fillMaxWidth()) {
-        OutlinedButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-            Text("$label: ${value.ifBlank { "Nenhuma" }}", modifier = Modifier.weight(1f))
-            Icon(Icons.Filled.ArrowDropDown, null)
-        }
+        FieldBox(label, value.ifBlank { tr("Nenhuma") }, Icons.Filled.ArrowDropDown) { open = true }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             options.forEach { o ->
                 DropdownMenuItem(text = { Text(o.ifBlank { tr("Nenhuma") }) }, onClick = { onChange(o); open = false })
@@ -188,72 +243,69 @@ fun FuelForm(
             r.total?.let { total = dec(it) }
             r.date?.let { date = it }
         }
-        if (phev) Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(t("Carga elétrica (kWh)", "Electric charge (kWh)"))
-                Text(t("Liga se isto foi uma carga da bateria. Fica fora do consumo de combustível.", "Turn on if this was a battery charge. It stays out of the fuel consumption."), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (phev) FormSection {
+            FormSwitch(
+                t("Carga elétrica (kWh)", "Electric charge (kWh)"),
+                t("Liga se isto foi uma carga da bateria. Fica fora do consumo de combustível.", "Turn on if this was a battery charge. It stays out of the fuel consumption."),
+                elec,
+            ) { elec = it }
+        }
+        FormSection(t("Quando e quilómetros", "When and distance")) {
+            DateField(tr("Data"), date) { date = it }
+            if (item == null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                FilterChip(selected = !byTrip, onClick = { byTrip = false; EntryMemo.byTrip = false }, label = { Text(t("Conta-quilómetros", "Odometer")) })
+                FilterChip(selected = byTrip, onClick = { byTrip = true; EntryMemo.byTrip = true }, label = { Text(t("Km desde o último", "Km since last")) })
             }
-            Switch(checked = elec, onCheckedChange = { elec = it })
-        }
-        DateField(tr("Data"), date) { date = it }
-        if (item == null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = !byTrip, onClick = { byTrip = false; EntryMemo.byTrip = false }, label = { Text(t("Km do conta-quilómetros", "Odometer reading")) })
-            FilterChip(selected = byTrip, onClick = { byTrip = true; EntryMemo.byTrip = true }, label = { Text(t("Km desde o último", "Km since last")) })
-        }
-        if (byTrip) NumField(
-            t("Quilómetros desde o último abastecimento", "Kilometres since the last refuel"), km, { km = it.filter(Char::isDigit) }, isError = kmBad,
-            hint = if (kmV != null) t("Conta-quilómetros: ${fint(kmV)} km (último registo: ${fint(baseKm)} km)", "Odometer: ${fint(kmV)} km (last entry: ${fint(baseKm)} km)")
-                   else t("Último registo: ${fint(baseKm)} km", "Last entry: ${fint(baseKm)} km"),
-        ) else NumField(
-            t("Quilómetros no conta-quilómetros", "Odometer reading (km)"), km, { km = it.filter(Char::isDigit) }, isError = kmBad,
-            hint = t("Atuais: ${fint(car.km)} km", "Current: ${fint(car.km)} km"),
-        )
-        if (firstRef && !(phev && elec)) NumField(
-            t("Km feitos com o depósito anterior (opcional)", "Km driven on the previous tank (optional)"), since, { since = it.filter(Char::isDigit) },
-            hint = t("Se souberes, a média aparece já neste abastecimento, sem esperar pelo próximo.", "If you know it, the average shows right away, without waiting for the next refuel."),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            NumField(if (ev) "kWh" else tr("Litros"), liters, { liters = it }, Modifier.weight(1f), decimal = true, isError = lBad,
-                hint = if (phev && elec) "" else if (ev) t("Bateria: ${car.tankL} kWh", "Battery: ${car.tankL} kWh") else t("Depósito: ${car.tankL} L", "Tank: ${car.tankL} L"))
-            NumField(tr("Total (€)"), total, { total = it }, Modifier.weight(1f), decimal = true, isError = tBad)
-        }
-        Column(
-            Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(tV?.let { eur(it) } ?: "— €", fontSize = 34.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-            Text(
-                (if (ev) t("Preço por kWh", "Price per kWh") else t("Preço por litro", "Price per litre")) + ": ${ppl?.let { fmt(it, 3) + " €/$u" } ?: "—"}" + (todayAvg?.takeIf { !ev }?.let { t(" · média hoje ", " · average today ") + "${fmt(it, 3)} €/L" } ?: ""),
-                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (byTrip) NumField(
+                t("Quilómetros desde o último abastecimento", "Kilometres since the last refuel"), km, { km = it.filter(Char::isDigit) }, isError = kmBad,
+                hint = if (kmV != null) t("Conta-quilómetros: ${fint(kmV)} km (último registo: ${fint(baseKm)} km)", "Odometer: ${fint(kmV)} km (last entry: ${fint(baseKm)} km)")
+                       else t("Último registo: ${fint(baseKm)} km", "Last entry: ${fint(baseKm)} km"),
+            ) else NumField(
+                t("Quilómetros no conta-quilómetros", "Odometer reading (km)"), km, { km = it.filter(Char::isDigit) }, isError = kmBad,
+                hint = t("Atuais: ${fint(car.km)} km", "Current: ${fint(car.km)} km"),
+            )
+            if (firstRef && !(phev && elec)) NumField(
+                t("Km feitos com o depósito anterior (opcional)", "Km driven on the previous tank (optional)"), since, { since = it.filter(Char::isDigit) },
+                hint = t("Se souberes, a média aparece já neste abastecimento, sem esperar pelo próximo.", "If you know it, the average shows right away, without waiting for the next refuel."),
             )
         }
-        val warns = buildList {
-            if (kmV != null && item == null && lastKm != null && kmV < lastKm) add(t("O km (${fint(kmV)}) é menor que o do último registo (${fint(lastKm)}). Está certo?", "The km (${fint(kmV)}) is lower than your last entry (${fint(lastKm)}). Is that right?"))
-            if (kmV != null && lastKm != null && kmV - lastKm > 3000) add(t("Mais de 3 000 km desde o último registo. Esqueceste algum abastecimento?", "Over 3,000 km since the last entry. Did you miss a refuel?"))
-            if (ppl != null) {
-                val lo = if (ev) 0.03 else 0.8
-                val hi = if (ev) 1.6 else 3.2
-                if (ppl < lo || ppl > hi) add(t("Preço de ${fmt(ppl, 3)} €/$u fora do normal. Confirma litros e total.", "Price of ${fmt(ppl, 3)} €/$u looks unusual. Check quantity and total."))
+        FormSection(t("Quantidade e preço", "Amount and price")) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NumField(if (ev) "kWh" else tr("Litros"), liters, { liters = it }, Modifier.weight(1f), decimal = true, isError = lBad,
+                    hint = if (phev && elec) "" else if (ev) t("Bateria: ${car.tankL} kWh", "Battery: ${car.tankL} kWh") else t("Depósito: ${car.tankL} L", "Tank: ${car.tankL} L"))
+                NumField(tr("Total (€)"), total, { total = it }, Modifier.weight(1f), decimal = true, isError = tBad)
             }
-            if (lV != null && lV > 0 && lV > maxQ) add(t("Mais do que cabe no depósito (${car.tankL}).", "More than the tank holds (${car.tankL})."))
-            if (kmV != null && tV != null && others.any { it.id != (item?.id ?: -1L) && it.date == date.toEpochDay() && it.km == kmV && it.total == tV }) add(t("Já existe um abastecimento igual neste dia. É repetido?", "An identical refuel already exists on this day. Is it a duplicate?"))
-        }
-        warns.forEach { Text("⚠ $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-        var moreDetails by remember { mutableStateOf(station.isNotBlank()) }
-        TextButton(onClick = { moreDetails = !moreDetails }) {
-            Text(if (moreDetails) t("Menos detalhes", "Fewer details") else t("Mais detalhes (posto)", "More details (station)"))
-        }
-        if (moreDetails) TxtField(if (ev) t("Posto de carregamento (opcional)", "Charging station (optional)") else tr("Posto (opcional)"), station, { station = it })
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(if (ev) t("Carga completa", "Full charge") else tr("Depósito cheio"))
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(tV?.let { eur(it) } ?: "— €", fontSize = 34.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black, color = MaterialTheme.colorScheme.primary)
                 Text(
-                    tr("Opcional. Com depósito cheio o consumo é mais exato, mas também é calculado com abastecimentos parciais, à medida que andas."),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    (if (ev) t("Preço por kWh", "Price per kWh") else t("Preço por litro", "Price per litre")) + ": ${ppl?.let { fmt(it, 3) + " €/$u" } ?: "—"}" + (todayAvg?.takeIf { !ev }?.let { t(" · média hoje ", " · average today ") + "${fmt(it, 3)} €/L" } ?: ""),
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Switch(checked = full, onCheckedChange = { full = it })
+            val warns = buildList {
+                if (kmV != null && item == null && lastKm != null && kmV < lastKm) add(t("O km (${fint(kmV)}) é menor que o do último registo (${fint(lastKm)}). Está certo?", "The km (${fint(kmV)}) is lower than your last entry (${fint(lastKm)}). Is that right?"))
+                if (kmV != null && lastKm != null && kmV - lastKm > 3000) add(t("Mais de 3 000 km desde o último registo. Esqueceste algum abastecimento?", "Over 3,000 km since the last entry. Did you miss a refuel?"))
+                if (ppl != null) {
+                    val lo = if (ev) 0.03 else 0.8
+                    val hi = if (ev) 1.6 else 3.2
+                    if (ppl < lo || ppl > hi) add(t("Preço de ${fmt(ppl, 3)} €/$u fora do normal. Confirma litros e total.", "Price of ${fmt(ppl, 3)} €/$u looks unusual. Check quantity and total."))
+                }
+                if (lV != null && lV > 0 && lV > maxQ) add(t("Mais do que cabe no depósito (${car.tankL}).", "More than the tank holds (${car.tankL})."))
+                if (kmV != null && tV != null && others.any { it.id != (item?.id ?: -1L) && it.date == date.toEpochDay() && it.km == kmV && it.total == tV }) add(t("Já existe um abastecimento igual neste dia. É repetido?", "An identical refuel already exists on this day. Is it a duplicate?"))
+            }
+            warns.forEach { Text("⚠ $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+        }
+        FormSection(t("Detalhes", "Details")) {
+            TxtField(if (ev) t("Posto de carregamento (opcional)", "Charging station (optional)") else tr("Posto (opcional)"), station, { station = it })
+            FormSwitch(
+                if (ev) t("Carga completa", "Full charge") else tr("Depósito cheio"),
+                tr("Opcional. Com depósito cheio o consumo é mais exato, mas também é calculado com abastecimentos parciais, à medida que andas."),
+                full,
+            ) { full = it }
         }
     }
 }
@@ -303,21 +355,27 @@ fun ServiceForm(car: Vehicle, item: Service?, onSave: (Service) -> Unit, onDelet
             r.total?.let { parts = dec(it) }
             r.date?.let { date = it }
         }
-        TxtField(tr("O que foi feito"), title, { title = it }, isError = tried && title.isBlank())
-        PickField(tr("Tipo"), cat, SERVICE_CATEGORIES) { cat = it }
-        DateField(tr("Data"), date) { date = it }
-        NumField(tr("Quilómetros"), km, { km = it.filter(Char::isDigit) }, isError = tried && (kmV == null || kmV <= 0))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = byMe, onClick = { byMe = true }, label = { Text(tr("Feito por mim")) })
-            FilterChip(selected = !byMe, onClick = { byMe = false }, label = { Text(tr("Oficina")) })
+        FormSection(t("O que foi feito", "What was done")) {
+            TxtField(tr("O que foi feito"), title, { title = it }, isError = tried && title.isBlank())
+            PickField(tr("Tipo"), cat, SERVICE_CATEGORIES) { cat = it }
+            DateField(tr("Data"), date) { date = it }
+            NumField(tr("Quilómetros"), km, { km = it.filter(Char::isDigit) }, isError = tried && (kmV == null || kmV <= 0))
         }
-        if (!byMe) TxtField(tr("Oficina"), shop, { shop = it })
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            NumField(tr("Peças (€)"), parts, { parts = it }, Modifier.weight(1f), decimal = true, isError = partsBad)
-            NumField(tr("Mão de obra (€)"), labor, { labor = it }, Modifier.weight(1f), decimal = true, isError = laborBad)
+        FormSection(t("Quem fez e custo", "Who did it and cost")) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = byMe, onClick = { byMe = true }, label = { Text(tr("Feito por mim")) })
+                FilterChip(selected = !byMe, onClick = { byMe = false }, label = { Text(tr("Oficina")) })
+            }
+            if (!byMe) TxtField(tr("Oficina"), shop, { shop = it })
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NumField(tr("Peças (€)"), parts, { parts = it }, Modifier.weight(1f), decimal = true, isError = partsBad)
+                NumField(tr("Mão de obra (€)"), labor, { labor = it }, Modifier.weight(1f), decimal = true, isError = laborBad)
+            }
         }
-        TxtField(tr("Notas (opcional)"), notes, { notes = it })
-        PhotoField(tr("Fatura ou foto"), image, item?.image ?: "") { image = it }
+        FormSection(t("Extras", "Extras")) {
+            TxtField(tr("Notas (opcional)"), notes, { notes = it })
+            PhotoField(tr("Fatura ou foto"), image, item?.image ?: "") { image = it }
+        }
     }
 }
 
@@ -351,10 +409,14 @@ fun ExpenseForm(car: Vehicle, item: Expense?, onSave: (Expense) -> Unit, onDelet
             r.total?.let { amount = dec(it) }
             r.date?.let { date = it }
         }
-        PickField(tr("Tipo"), type, EXPENSE_TYPES) { type = it }
-        DateField(tr("Data"), date) { date = it }
-        NumField(tr("Valor (€)"), amount, { amount = it }, decimal = true, isError = tried && (v == null || v <= 0))
-        PhotoField(tr("Fatura ou foto"), image, item?.image ?: "") { image = it }
+        FormSection {
+            PickField(tr("Tipo"), type, EXPENSE_TYPES) { type = it }
+            DateField(tr("Data"), date) { date = it }
+            NumField(tr("Valor (€)"), amount, { amount = it }, decimal = true, isError = tried && (v == null || v <= 0))
+        }
+        FormSection(t("Comprovativo", "Proof")) {
+            PhotoField(tr("Fatura ou foto"), image, item?.image ?: "") { image = it }
+        }
     }
 }
 
@@ -385,8 +447,7 @@ fun ReminderForm(car: Vehicle, item: Reminder?, onSave: (Reminder) -> Unit, onDe
             }
         },
     ) {
-        if (item == null) {
-            Text(tr("Atalhos"), style = MaterialTheme.typography.labelMedium)
+        if (item == null) FormSection(tr("Atalhos")) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 REMINDER_PRESETS.forEach { p ->
                     AssistChip(onClick = {
@@ -397,18 +458,22 @@ fun ReminderForm(car: Vehicle, item: Reminder?, onSave: (Reminder) -> Unit, onDe
                 }
             }
         }
-        TxtField(tr("Nome (ex.: óleo e filtro)"), name, { name = it }, isError = tried && name.isBlank())
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            NumField(tr("A cada (km)"), everyKm, { everyKm = it.filter(Char::isDigit) }, Modifier.weight(1f), isError = tried && ek == 0 && em == 0)
-            NumField(tr("A cada (meses)"), everyMonths, { everyMonths = it.filter(Char::isDigit) }, Modifier.weight(1f))
+        FormSection(t("O aviso", "The reminder")) {
+            TxtField(tr("Nome (ex.: óleo e filtro)"), name, { name = it }, isError = tried && name.isBlank())
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NumField(tr("A cada (km)"), everyKm, { everyKm = it.filter(Char::isDigit) }, Modifier.weight(1f), isError = tried && ek == 0 && em == 0)
+                NumField(tr("A cada (meses)"), everyMonths, { everyMonths = it.filter(Char::isDigit) }, Modifier.weight(1f))
+            }
         }
-        NumField(tr("Feito aos (km)"), lastKm, { lastKm = it.filter(Char::isDigit) }, isError = tried && lk == null)
-        DateField(tr("Feito em"), lastDate) { lastDate = it }
-        PickField(tr("Atualiza ao registar"), cat, listOf("") + SERVICE_CATEGORIES + "Inspeção") { cat = it }
-        Text(
-            tr("Se registares uma intervenção deste tipo, o aviso recomeça sozinho."),
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        FormSection(t("Última vez", "Last time")) {
+            NumField(tr("Feito aos (km)"), lastKm, { lastKm = it.filter(Char::isDigit) }, isError = tried && lk == null)
+            DateField(tr("Feito em"), lastDate) { lastDate = it }
+            PickField(tr("Atualiza ao registar"), cat, listOf("") + SERVICE_CATEGORIES + "Inspeção") { cat = it }
+            Text(
+                tr("Se registares uma intervenção deste tipo, o aviso recomeça sozinho."),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -454,31 +519,34 @@ fun VehicleForm(item: Vehicle?, canDelete: Boolean, onSave: (Vehicle) -> Unit, o
                 }
             },
         ) {
-            PickField(tr("Marca (define as cores)"), brand.label, Brand.entries.map { it.label }) { l ->
-                brand = Brand.entries.first { it.label == l }
+            FormSection(t("Identificação", "Identity")) {
+                PickField(tr("Marca (define as cores)"), brand.label, Brand.entries.map { it.label }) { l ->
+                    brand = Brand.entries.first { it.label == l }
+                }
+                TxtField(tr("Nome na garagem"), name, { name = it }, isError = tried && name.isBlank())
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TxtField(tr("Modelo"), model, { model = it }, Modifier.weight(1f), isError = tried && model.isBlank())
+                    NumField(tr("Ano"), year, { year = it.filter(Char::isDigit).take(4) }, Modifier.weight(1f))
+                }
+                TxtField(tr("Matrícula"), plate, { plate = it })
             }
-            TxtField(tr("Nome na garagem"), name, { name = it }, isError = tried && name.isBlank())
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TxtField(tr("Modelo"), model, { model = it }, Modifier.weight(1f), isError = tried && model.isBlank())
-                NumField(tr("Ano"), year, { year = it.filter(Char::isDigit).take(4) }, Modifier.weight(1f))
+            FormSection(t("Motor e depósito", "Engine and tank")) {
+                TxtField(tr("Motor"), engine, { engine = it })
+                PickField(t("Combustível", "Fuel"), fuel, listOf("Gasóleo", "Gasolina 95", "Gasolina 98", "GPL", "Elétrico", "Híbrido (Gasolina 95)", "Híbrido (Gasóleo)", "Híbrido plug-in (Gasolina 95)", "Híbrido plug-in (Gasóleo)")) { fuel = it }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    NumField(if (fuel == "Elétrico") t("Bateria (kWh)", "Battery (kWh)") else tr("Depósito (L)"), tank, { tank = it.filter(Char::isDigit) }, Modifier.weight(1f), isError = tried && (tankV == null || tankV <= 0))
+                    NumField(tr("Km atuais"), km, { km = it.filter(Char::isDigit) }, Modifier.weight(1f), isError = tried && kmV == null)
+                }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TxtField(tr("Motor"), engine, { engine = it }, Modifier.weight(1f))
-                PickField(tr("Comb."), fuel, listOf("Gasóleo", "Gasolina 95", "Gasolina 98", "GPL", "Elétrico", "Híbrido (Gasolina 95)", "Híbrido (Gasóleo)", "Híbrido plug-in (Gasolina 95)", "Híbrido plug-in (Gasóleo)"), Modifier.weight(1f)) { fuel = it }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                NumField(if (fuel == "Elétrico") t("Bateria (kWh)", "Battery (kWh)") else tr("Depósito (L)"), tank, { tank = it.filter(Char::isDigit) }, Modifier.weight(1f), isError = tried && (tankV == null || tankV <= 0))
-                NumField(tr("Km atuais"), km, { km = it.filter(Char::isDigit) }, Modifier.weight(1f), isError = tried && kmV == null)
-            }
-            TxtField(tr("Matrícula"), plate, { plate = it })
-            Text(t("Compra e orçamento (opcional)", "Purchase and budget (optional)"), style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                NumField(t("Preço de compra (€)", "Purchase price (€)"), price, { price = it }, Modifier.weight(1f), decimal = true)
-                NumField(t("Km na compra", "Km at purchase"), pKm, { pKm = it.filter(Char::isDigit) }, Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                NumField(t("Valor atual estimado (€)", "Estimated value now (€)"), value, { value = it }, Modifier.weight(1f), decimal = true)
-                NumField(t("Orçamento mensal (€)", "Monthly budget (€)"), budget, { budget = it }, Modifier.weight(1f), decimal = true)
+            FormSection(t("Compra e orçamento (opcional)", "Purchase and budget (optional)")) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    NumField(t("Preço de compra (€)", "Purchase price (€)"), price, { price = it }, Modifier.weight(1f), decimal = true)
+                    NumField(t("Km na compra", "Km at purchase"), pKm, { pKm = it.filter(Char::isDigit) }, Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    NumField(t("Valor atual estimado (€)", "Estimated value now (€)"), value, { value = it }, Modifier.weight(1f), decimal = true)
+                    NumField(t("Orçamento mensal (€)", "Monthly budget (€)"), budget, { budget = it }, Modifier.weight(1f), decimal = true)
+                }
             }
         }
     }

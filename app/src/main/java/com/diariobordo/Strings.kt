@@ -261,5 +261,8 @@ private val EN_TEXT: Map<String, String> = mapOf(
     "Mais perto" to "Closest",
     "Ver no mapa" to "See on map",
     "Toca num posto para abrir no mapa." to "Tap a station to open it on the map.",
-    " vs média" to " vs average"
+    " vs média" to " vs average",
+    "Galeria" to "Gallery",
+    "Tirar foto" to "Take photo",
+    "Nova foto" to "New photo"
 )

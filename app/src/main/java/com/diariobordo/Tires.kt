@@ -102,21 +102,22 @@ fun TireForm(car: Vehicle, item: Tire?, onSave: (Tire) -> Unit, onDelete: (Tire)
             }
         },
     ) {
-        TxtField(t("Marca e modelo", "Brand and model"), brand, { brand = it }, isError = tried && brand.isBlank())
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TxtField(t("Medida (205/55 R16)", "Size (205/55 R16)"), size, { size = it }, Modifier.weight(1f))
-            PickField(t("Tipo", "Type"), kind, TIRE_KINDS, Modifier.weight(1f)) { kind = it }
+        FormSection(t("Pneus", "Tyres")) {
+            TxtField(t("Marca e modelo", "Brand and model"), brand, { brand = it }, isError = tried && brand.isBlank())
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TxtField(t("Medida (205/55 R16)", "Size (205/55 R16)"), size, { size = it }, Modifier.weight(1f))
+                PickField(t("Tipo", "Type"), kind, TIRE_KINDS, Modifier.weight(1f)) { kind = it }
+            }
         }
-        DateField(t("Montados em", "Fitted on"), date) { date = it }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            NumField(t("Km na montagem", "Km when fitted"), mountKm, { mountKm = it.filter(Char::isDigit) }, Modifier.weight(1f), isError = tried && mk == null)
-            NumField(t("Km da rotação", "Km at rotation"), rot, { rot = it.filter(Char::isDigit) }, Modifier.weight(1f))
+        FormSection(t("Montagem", "Fitting")) {
+            DateField(t("Montados em", "Fitted on"), date) { date = it }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NumField(t("Km na montagem", "Km when fitted"), mountKm, { mountKm = it.filter(Char::isDigit) }, Modifier.weight(1f), isError = tried && mk == null)
+                NumField(t("Km da rotação", "Km at rotation"), rot, { rot = it.filter(Char::isDigit) }, Modifier.weight(1f))
+            }
+            FormSwitch(t("Montados agora no carro", "Fitted on the car now"), null, active) { active = it }
+            if (!active) NumField(t("Km do carro quando saíram", "Car km when removed"), removed, { removed = it.filter(Char::isDigit) }, hint = t("Atuais: ${fint(car.km)} km", "Current: ${fint(car.km)} km"))
+            TxtField(t("Notas (opcional)", "Notes (optional)"), notes, { notes = it })
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(t("Montados agora no carro", "Fitted on the car now"), modifier = Modifier.weight(1f))
-            Switch(checked = active, onCheckedChange = { active = it })
-        }
-        if (!active) NumField(t("Km do carro quando saíram", "Car km when removed"), removed, { removed = it.filter(Char::isDigit) }, hint = t("Atuais: ${fint(car.km)} km", "Current: ${fint(car.km)} km"))
-        TxtField(t("Notas (opcional)", "Notes (optional)"), notes, { notes = it })
     }
 }

@@ -223,3 +223,8 @@ Adicionados em res/drawable-nodpi: BYD, Lexus, Jaguar, Land Rover, Alfa Romeo, C
 
 ## Batch S
 - Versão 1.7: passagem visual com a skill mobile-app-ui-design: espaçamentos na grelha de 8/16 (cartões 16, espaço entre blocos 16), momento de recompensa ao guardar um abastecimento (mostra o consumo e como se compara com a tua média).
+
+## Batch T
+- Versão 1.8: foto direta na app (Tirar foto + Galeria) em documentos, faturas de intervenções e despesas.
+- Cartões: ao criar um cartão abre logo o leitor de QR/código de barras; novo botão para ler o código a partir de uma imagem da galeria (nova dependência `barcode-scanning`).
+- Formulários redesenhados: cabeçalho com X, campos agrupados em secções, botões Guardar/Apagar sempre visíveis, campos de data e de lista com o mesmo aspeto dos de texto. Aplicado a abastecimento, intervenção, despesa, aviso, carro, pneus, documento e cartão.

@@ -18,8 +18,8 @@ android {
         applicationId = "com.cockpit.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.7"
+        versionCode = 10
+        versionName = "1.8"
         // Chave pública do Logo.dev (opcional). Pões em gradle.properties: logoDevKey=pk_xxx
         buildConfigField("String", "LOGO_DEV_KEY", "\"${project.findProperty("logoDevKey") ?: ""}\"")
     }
@@ -69,6 +69,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
     implementation("com.google.zxing:core:3.5.3")
     implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
     val room = "2.6.1"
     implementation("androidx.room:room-runtime:$room")

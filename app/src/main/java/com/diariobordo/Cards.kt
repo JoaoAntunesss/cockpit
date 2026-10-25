@@ -4,6 +4,13 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.widget.Toast
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.PhotoLibrary
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.common.InputImage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -137,6 +144,23 @@ fun scanCode(ctx: Context, onResult: (String, String) -> Unit) {
         }
 }
 
+/** Lê o código a partir de uma imagem (foto ou captura de ecrã na galeria). Funciona sem rede. */
+fun scanCodeFromImage(ctx: Context, uri: Uri, onResult: (String, String) -> Unit) {
+    try {
+        BarcodeScanning.getClient().process(InputImage.fromFilePath(ctx, uri))
+            .addOnSuccessListener { list ->
+                val b = list.firstOrNull { !it.rawValue.isNullOrBlank() }
+                if (b?.rawValue != null) onResult(b.rawValue!!, zxingName(b.format))
+                else Toast.makeText(ctx, t("Não encontrei nenhum código nesta imagem.", "No code found in this image."), Toast.LENGTH_LONG).show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(ctx, t("Não consegui ler a imagem.", "Could not read the image."), Toast.LENGTH_LONG).show()
+            }
+    } catch (e: Exception) {
+        Toast.makeText(ctx, t("Não consegui abrir a imagem.", "Could not open the image."), Toast.LENGTH_LONG).show()
+    }
+}
+
 // ---------- Ecrã ----------
 
 @Composable
@@ -219,6 +243,13 @@ fun CardForm(item: FuelCard?, onSave: (FuelCard) -> Unit, onDelete: (FuelCard) -
     var format by remember { mutableStateOf(item?.format ?: "CODE_128") }
     var notes by remember { mutableStateOf(item?.notes ?: "") }
     var err by remember { mutableStateOf(false) }
+    val fromImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) scanCodeFromImage(ctx, uri) { raw, fmt -> number = raw; format = fmt; err = false }
+    }
+    // Ao criar um cartão novo, abre logo o leitor: aponta ao código e já está.
+    LaunchedEffect(Unit) {
+        if (item == null) scanCode(ctx) { raw, fmt -> number = raw; format = fmt; err = false }
+    }
     FormSheet(
         title = if (item == null) tr("Novo cartão") else tr("Editar cartão"),
         onClose = onClose,
@@ -228,13 +259,31 @@ fun CardForm(item: FuelCard?, onSave: (FuelCard) -> Unit, onDelete: (FuelCard) -
         },
         onDelete = item?.let { { onDelete(it) } },
     ) {
-        PickField(tr("Marca"), brand, STATION_BRANDS.map { it.label }) { brand = it }
-        TxtField(tr("Nome (ex.: Cartão Galp da família)"), name, { name = it })
-        Button(
-            onClick = { scanCode(ctx) { raw, fmt -> number = raw; format = fmt; err = false } },
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Icon(Icons.Filled.QrCodeScanner, null); Spacer(Modifier.width(8.dp)); Text(tr("Ler código com a câmara")) }
-        TxtField(tr("Número do cartão"), number, { number = it; err = false }, isError = err)
-        TxtField(tr("Notas (ex.: −6 cêntimos/L)"), notes, { notes = it })
+        FormSection(t("Cartão", "Card")) {
+            PickField(tr("Marca"), brand, STATION_BRANDS.map { it.label }) { brand = it }
+            TxtField(tr("Nome (ex.: Cartão Galp da família)"), name, { name = it })
+        }
+        FormSection(t("Código", "Code")) {
+            Button(
+                onClick = { scanCode(ctx) { raw, fmt -> number = raw; format = fmt; err = false } },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) { Icon(Icons.Filled.QrCodeScanner, null); Spacer(Modifier.width(8.dp)); Text(tr("Ler código com a câmara")) }
+            OutlinedButton(
+                onClick = { fromImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+            ) { Icon(Icons.Filled.PhotoLibrary, null); Spacer(Modifier.width(8.dp)); Text(t("Ler de uma imagem da galeria", "Read from a gallery image")) }
+            Text(
+                t("Lê QR, códigos de barras e outros formatos de cartões.", "Reads QR codes, barcodes and other card formats."),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TxtField(tr("Número do cartão"), number, { number = it; err = false }, isError = err)
+            if (number.isNotBlank()) Text(
+                t("Formato: ", "Format: ") + format.replace('_', ' '),
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        FormSection {
+            TxtField(tr("Notas (ex.: −6 cêntimos/L)"), notes, { notes = it })
+        }
     }
 }

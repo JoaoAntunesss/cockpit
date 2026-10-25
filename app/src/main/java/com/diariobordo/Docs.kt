@@ -82,16 +82,6 @@ fun DocForm(car: Vehicle, item: Doc?, onSave: (Doc) -> Unit, onDelete: (Doc) -> 
     var warn by remember { mutableStateOf((item?.warnDays ?: 30).toString()) }
     var notes by remember { mutableStateOf(item?.notes ?: "") }
     var image by remember { mutableStateOf(item?.image ?: "") }
-    var big by remember { mutableStateOf(false) }
-
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) scope.launch {
-            copyIntoApp(ctx, uri)?.let { p ->
-                if (image != (item?.image ?: "")) deleteFile(image)   // descarta uma escolha anterior ainda não guardada
-                image = p
-            }
-        }
-    }
 
     // Sair sem guardar apaga a imagem nova que ainda não foi guardada
     val leave = { if (image != (item?.image ?: "")) deleteFile(image); onClose() }
@@ -110,46 +100,24 @@ fun DocForm(car: Vehicle, item: Doc?, onSave: (Doc) -> Unit, onDelete: (Doc) -> 
             )
         },
     ) {
-        PickField(tr("Tipo"), type, DOC_TYPES) { type = it }
-        TxtField(if (type == "Seguro") tr("Seguradora") else tr("Entidade ou descrição"), title, { title = it })
-        TxtField(if (type == "Seguro") tr("Nº da apólice") else tr("Nº ou referência"), number, { number = it })
-        DateField(tr("Válido até"), expiry) { expiry = it }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            NumField(tr("Custo (€)"), cost, { cost = it }, Modifier.weight(1f), decimal = true)
-            NumField(tr("Avisar com (dias)"), warn, { warn = it.filter(Char::isDigit) }, Modifier.weight(1f))
+        FormSection(t("Documento", "Document")) {
+            PickField(tr("Tipo"), type, DOC_TYPES) { type = it }
+            TxtField(if (type == "Seguro") tr("Seguradora") else tr("Entidade ou descrição"), title, { title = it })
+            TxtField(if (type == "Seguro") tr("Nº da apólice") else tr("Nº ou referência"), number, { number = it })
         }
-        TxtField(tr("Notas (contactos, condições…)"), notes, { notes = it })
-
-        Text(tr("Print ou foto"), style = MaterialTheme.typography.titleSmall)
-        if (image.isNotBlank()) {
-            AsyncImage(
-                model = File(image), contentDescription = tr("Documento"),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp)).clickable { big = true },
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.weight(1f)) { Text(tr("Trocar")) }
-                OutlinedButton(onClick = { if (image != (item?.image ?: "")) deleteFile(image); image = "" }, modifier = Modifier.weight(1f)) { Text(tr("Remover")) }
-            }
-        } else {
-            OutlinedButton(
-                onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) {
-                Icon(Icons.Filled.AddPhotoAlternate, null); Spacer(Modifier.width(8.dp)); Text(tr("Anexar print ou foto"))
+        FormSection(t("Prazo e custo", "Deadline and cost")) {
+            DateField(tr("Válido até"), expiry) { expiry = it }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NumField(tr("Custo (€)"), cost, { cost = it }, Modifier.weight(1f), decimal = true)
+                NumField(tr("Avisar com (dias)"), warn, { warn = it.filter(Char::isDigit) }, Modifier.weight(1f))
             }
         }
-        Text(
-            tr("A imagem fica guardada só no teu telemóvel."),
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-
-    if (big && image.isNotBlank()) {
-        Dialog(onDismissRequest = { big = false }) {
-            AsyncImage(
-                model = File(image), contentDescription = tr("Documento"), contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { big = false },
+        FormSection(t("Notas e foto", "Notes and photo")) {
+            TxtField(tr("Notas (contactos, condições…)"), notes, { notes = it })
+            PhotoField(tr("Print ou foto"), image, item?.image ?: "") { image = it }
+            Text(
+                tr("A imagem fica guardada só no teu telemóvel."),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -170,35 +138,44 @@ val REMINDER_PRESETS = listOf(
 )
 
 
-/** Foto ou fatura: escolhe da galeria, fica guardada no telemóvel. */
+/** Foto ou fatura: tira na hora com a câmara ou escolhe da galeria. Fica guardada no telemóvel. */
 @Composable
 fun PhotoField(label: String, image: String, original: String, onChange: (String) -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var big by remember { mutableStateOf(false) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) scope.launch {
+    fun accept(uri: Uri) {
+        scope.launch {
             copyIntoApp(ctx, uri)?.let { p ->
                 if (image != original) deleteFile(image)
                 onChange(p)
             }
         }
     }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) accept(uri) }
+    val shoot = rememberCameraLauncher { uri -> accept(uri) }
+    val gallery = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+
     Text(label, style = MaterialTheme.typography.titleSmall)
     if (image.isNotBlank()) {
         AsyncImage(
             model = File(image), contentDescription = label, contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(12.dp)).clickable { big = true },
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.weight(1f)) { Text(tr("Trocar")) }
-            OutlinedButton(onClick = { if (image != original) deleteFile(image); onChange("") }, modifier = Modifier.weight(1f)) { Text(tr("Remover")) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = shoot, modifier = Modifier.weight(1f)) { Icon(Icons.Filled.PhotoCamera, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(tr("Nova foto"), maxLines = 1) }
+            OutlinedButton(onClick = gallery, modifier = Modifier.weight(1f)) { Icon(Icons.Filled.AddPhotoAlternate, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(tr("Galeria"), maxLines = 1) }
+            IconButton(onClick = { if (image != original) deleteFile(image); onChange("") }) { Icon(Icons.Filled.Delete, tr("Remover")) }
         }
     } else {
-        OutlinedButton(
-            onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-        ) { Icon(Icons.Filled.AddPhotoAlternate, null); Spacer(Modifier.width(8.dp)); Text(tr("Anexar foto ou fatura")) }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(onClick = shoot, modifier = Modifier.weight(1f).height(52.dp)) {
+                Icon(Icons.Filled.PhotoCamera, null); Spacer(Modifier.width(8.dp)); Text(tr("Tirar foto"), maxLines = 1)
+            }
+            OutlinedButton(onClick = gallery, modifier = Modifier.weight(1f).height(52.dp)) {
+                Icon(Icons.Filled.AddPhotoAlternate, null); Spacer(Modifier.width(8.dp)); Text(tr("Galeria"), maxLines = 1)
+            }
+        }
     }
     if (big && image.isNotBlank()) {
         Dialog(onDismissRequest = { big = false }) {
