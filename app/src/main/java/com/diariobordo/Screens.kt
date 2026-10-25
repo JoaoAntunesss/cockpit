@@ -285,6 +285,7 @@ fun HomeScreen(d: CarData, a: Actions, pad: PaddingValues) {
         if (d.vehicle.monthlyBudget > 0) item { BudgetBar(monthSpend, d.vehicle.monthlyBudget) }
         item { Appear(0) { Hero(d.vehicle, st.avg, monthSpend, a.fixKm, a.editCar) } }
         item { Appear(1) { FocusCard(d, curKm, a) } }
+        item { Appear(1) { InsightsCard(d, monthSpend) } }
         kmEst?.let { e ->
             item { KmCard(e.km, d.vehicle.km, onYes = { a.confirmKm(e.km) }, onFix = a.fixKm) }
         }
@@ -297,7 +298,7 @@ fun HomeScreen(d: CarData, a: Actions, pad: PaddingValues) {
                         Icon(if (up) Icons.Filled.Warning else Icons.Filled.CheckCircle, null)
                         Text(
                             when {
-                                up -> t("Consumo a subir. Nos últimos 3 abastecimentos gastaste ${fmt(pct, 0)}% mais (${fmt(st.prior ?: 0.0)} → ${fmt(st.recent ?: 0.0)} ${consUnit(d.vehicle.fuelType)} km). Vale a pena ver filtros, pneus e injetores.", "Consumption is rising. Over the last 3 refuels you used ${fmt(pct, 0)}% more (${fmt(st.prior ?: 0.0)} → ${fmt(st.recent ?: 0.0)} ${consUnit(d.vehicle.fuelType)} km). Worth checking filters, tyres and injectors.")
+                                up -> t((if (pct >= 15) "Consumo anormal. " else "Consumo a subir. ") + "Nos últimos 3 abastecimentos gastaste ${fmt(pct, 0)}% mais (${fmt(st.prior ?: 0.0)} → ${fmt(st.recent ?: 0.0)} ${consUnit(d.vehicle.fuelType)} km). Vale a pena ver filtros, pneus e injetores.", (if (pct >= 15) "Unusual consumption. " else "Consumption is rising. ") + "Over the last 3 refuels you used ${fmt(pct, 0)}% more (${fmt(st.prior ?: 0.0)} → ${fmt(st.recent ?: 0.0)} ${consUnit(d.vehicle.fuelType)} km). Worth checking filters, tyres and injectors.")
                                 down -> t("Consumo a descer. Menos ${fmt(-pct, 0)}% nos últimos 3 abastecimentos (${fmt(st.prior ?: 0.0)} → ${fmt(st.recent ?: 0.0)} ${consUnit(d.vehicle.fuelType)} km).", "Consumption is falling. ${fmt(-pct, 0)}% less over the last 3 refuels (${fmt(st.prior ?: 0.0)} → ${fmt(st.recent ?: 0.0)} ${consUnit(d.vehicle.fuelType)} km).")
                                 else -> t("Consumo estável. Os últimos 3 abastecimentos ficaram perto de ${fmt(st.recent ?: 0.0)} L/100 km.", "Consumption is stable. The last 3 refuels were around ${fmt(st.recent ?: 0.0)} ${consUnit(d.vehicle.fuelType)} km.")
                             },
@@ -1127,6 +1128,36 @@ fun NearbySheet(car: Vehicle, evMode: Boolean, st: NearbyState, nationalAvg: Dou
                         Text(tr("Toca num posto para abrir no mapa."), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
+            }
+        }
+    }
+}
+
+
+/** Custo por km (últimos 3 meses) e previsão do gasto até ao fim do mês. */
+@Composable
+private fun InsightsCard(d: CarData, monthSpend: Double) {
+    val total3 = monthly(d, 3).sumOf { it.total }
+    val span = kmSpan(d, 3)
+    val perKm = if (span >= 50 && total3 > 0) total3 / span else null
+    val today = LocalDate.now()
+    val forecast = if (today.dayOfMonth >= 5 && monthSpend > 0) monthSpend / today.dayOfMonth * today.lengthOfMonth() else null
+    if (perKm == null && forecast == null) return
+    Card(colors = cardColors(), border = cardBorder(), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text(t("Custo por km", "Cost per km"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(perKm?.let { fmt(it, 2) + " €" } ?: "—", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                Text(t("últimos 3 meses", "last 3 months"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Column(Modifier.weight(1f)) {
+                Text(t("Previsão do mês", "Month forecast"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(forecast?.let { eur(it) } ?: "—", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    if (forecast != null && d.vehicle.monthlyBudget > 0) (if (forecast > d.vehicle.monthlyBudget) t("acima do orçamento", "over budget") else t("dentro do orçamento", "within budget"))
+                    else t("ao ritmo atual", "at the current pace"),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
