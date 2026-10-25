@@ -83,8 +83,14 @@ class MainActivity : ComponentActivity() {
     private val vm: MainVm by viewModels()
     private val launchAction = mutableStateOf<String?>(null)
 
+    override fun onStart() {
+        super.onStart()
+        AppLock.onReturn(this)
+    }
+
     override fun onStop() {
         super.onStop()
+        if (!AppLock.prompting) AppLock.stoppedAt = System.currentTimeMillis()
         CarWidget.refresh(this)
         PriceWidget.refresh(this)
     }
@@ -107,7 +113,8 @@ class MainActivity : ComponentActivity() {
         AlertWorker.schedule(this)
         PriceWorker.schedule(this)
         launchAction.value = intent?.getStringExtra("go")
-        setContent { AppRoot(vm, launchAction.value) { launchAction.value = null } }
+        AppLock.initial(this)
+        setContent { if (AppLock.locked) LockScreen() else AppRoot(vm, launchAction.value) { launchAction.value = null } }
     }
 }
 
@@ -202,6 +209,10 @@ fun AppRoot(vm: MainVm, go: String?, onGoDone: () -> Unit) {
     // A marca do carro escolhido define as cores de toda a app
     GarageTheme(Brand.of(d?.vehicle?.brand)) {
         fun savedNote() { scope.launch { snack.currentSnackbarData?.dismiss(); snack.showSnackbar(t("Guardado", "Saved"), duration = SnackbarDuration.Short) } }
+        fun savedFuel(f: Fueling, prev: List<Fueling>, type: String) {
+            val m = fuelNote(f, prev, type)
+            if (m == null) savedNote() else scope.launch { snack.currentSnackbarData?.dismiss(); snack.showSnackbar(m, duration = SnackbarDuration.Short) }
+        }
         fun undoable(msg: String, undo: () -> Unit, expire: () -> Unit = {}) {
             scope.launch {
                 snack.currentSnackbarData?.dismiss()
@@ -390,7 +401,7 @@ fun AppRoot(vm: MainVm, go: String?, onGoDone: () -> Unit) {
                 onSave = { vm.saveVehicle(it); if (x.item == null) tab = Tab.HOME; close() },
                 onDelete = { vm.deleteVehicle(it); close() }, onClose = close,
             )
-            is Dlg.Fuel -> d?.let { key(formKey) { FuelForm(it.vehicle, x.item, { f -> vm.saveFueling(f); close(); savedNote() }, { f -> removeWithUndo(f); close() }, close, FuelPrices.slugFor(it.vehicle.fuelType)?.let { s -> pr.map[s]?.avg }, onSaveMore = { f -> vm.saveFueling(f); formKey++; savedNote() }, lastKm = it.fuelings.maxOfOrNull { f -> f.km }, onAnchor = { f -> vm.saveFueling(f) }, others = it.fuelings) } }
+            is Dlg.Fuel -> d?.let { key(formKey) { FuelForm(it.vehicle, x.item, { f -> vm.saveFueling(f); close(); savedFuel(f, it.fuelings, it.vehicle.fuelType) }, { f -> removeWithUndo(f); close() }, close, FuelPrices.slugFor(it.vehicle.fuelType)?.let { s -> pr.map[s]?.avg }, onSaveMore = { f -> vm.saveFueling(f); formKey++; savedFuel(f, it.fuelings, it.vehicle.fuelType) }, lastKm = it.fuelings.maxOfOrNull { f -> f.km }, onAnchor = { f -> vm.saveFueling(f) }, others = it.fuelings) } }
             is Dlg.Serv -> d?.let { key(formKey) { ServiceForm(it.vehicle, x.item, { s -> vm.saveService(s, x.item == null); close(); savedNote() }, { s -> removeWithUndo(s); close() }, close, onSaveMore = { s -> vm.saveService(s, true); formKey++; savedNote() }) } }
             is Dlg.Exp -> d?.let { key(formKey) { ExpenseForm(it.vehicle, x.item, { e -> vm.saveExpense(e, it.vehicle.km, x.item == null); close(); savedNote() }, { e -> removeWithUndo(e); close() }, close, onSaveMore = { e -> vm.saveExpense(e, it.vehicle.km, true); formKey++; savedNote() }) } }
             is Dlg.CardV -> CardView(x.item, { dlg = Dlg.CardF(x.item) }, close)
@@ -401,5 +412,22 @@ fun AppRoot(vm: MainVm, go: String?, onGoDone: () -> Unit) {
         AnimatedVisibility(!onboarded, enter = fadeIn(), exit = fadeOut(tween(300)) + slideOutVertically(tween(300)) { it / 6 }) {
             Onboarding { ctx.getSharedPreferences("diario", 0).edit().putBoolean("onboarded", true).apply(); onboarded = true }
         }
+    }
+}
+
+
+/** Momento de recompensa ao guardar: diz o consumo deste abastecimento e como se compara com a tua média. */
+private fun fuelNote(f: Fueling, prev: List<Fueling>, type: String): String? {
+    if (f.electric) return null
+    val before = fuelStats(prev.filter { it.id != f.id }.filter { !it.electric })
+    val after = fuelStats((prev.filter { it.id != f.id } + f).filter { !it.electric })
+    val row = after.rows.firstOrNull { it.f.date == f.date && it.f.km == f.km && it.f.total == f.total && it.cons != null } ?: return null
+    val cons = row.cons ?: return null
+    val base = t("Guardado · ", "Saved · ") + fmt(cons) + " " + consUnit(type) + " km"
+    val avg = before.avg ?: return base
+    return when {
+        cons < avg * 0.97 -> base + t(" · melhor que a tua média 🎉", " · better than your average 🎉")
+        cons > avg * 1.08 -> base + t(" · acima da tua média", " · above your average")
+        else -> base + t(" · na tua média", " · right on your average")
     }
 }
