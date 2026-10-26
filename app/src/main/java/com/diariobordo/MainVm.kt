@@ -124,7 +124,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
                     val list = kotlinx.coroutines.withTimeout(45_000L) { Chargers.download(here.first, here.second)
                         .map { it.copy(distKm = distKm(here.first, here.second, it.lat, it.lng)) }.sortedBy { it.distKm } }
                     _nearby.value = NearbyState(stations = list, done = true)
-                } catch (e: Exception) { _nearby.value = NearbyState(error = true) }
+                } catch (e: Exception) { _nearby.value = NearbyState(error = true, detail = Overpass.lastError.ifBlank { e.message ?: "" }) }
                 return@launch
             }
             val fid = Stations.fuelIdFor(fuelType)

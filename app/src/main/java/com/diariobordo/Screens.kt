@@ -1047,7 +1047,11 @@ fun NearbySheet(car: Vehicle, evMode: Boolean, st: NearbyState, nationalAvg: Dou
                 denied -> NearMsg(tr("Sem acesso à localização. Permite-o para ver os postos mais próximos."), tr("Permitir")) { ask() }
                 st.unsupported -> NearMsg(tr("Não há preços por posto para este tipo de combustível."))
                 st.locError -> NearMsg(tr("Não consegui obter a tua localização. Liga a localização do telemóvel e tenta outra vez."), tr("Tentar outra vez")) { ask() }
-                st.error -> NearMsg(tr("Não foi possível obter os preços. Verifica a ligação e tenta outra vez."), tr("Tentar outra vez")) { ask() }
+                st.error -> NearMsg(
+                    (if (evMode) t("Não foi possível obter os carregadores. Verifica a ligação e tenta outra vez.", "Could not load the chargers. Check your connection and try again.") else tr("Não foi possível obter os preços. Verifica a ligação e tenta outra vez.")) +
+                        (if (st.detail.isNotBlank()) "\n(${st.detail})" else ""),
+                    tr("Tentar outra vez"),
+                ) { ask() }
                 !st.done -> ShimmerRows(5, Modifier.padding(16.dp))
                 else -> {
                     val inRange = st.stations.filter { it.distKm <= radius }

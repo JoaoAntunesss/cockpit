@@ -42,11 +42,11 @@ data class NearbyState(
     val loading: Boolean = false,
     val error: Boolean = false,
     val locError: Boolean = false,
+    val detail: String = "",
     val unsupported: Boolean = false,
 )
 
 object Chargers {
-    private val ENDPOINTS = listOf("https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter")
 
     private fun kwOf(s: String): Double {
         // "22 kW", "50000" (W), "11;22" -> maior valor
@@ -59,27 +59,10 @@ object Chargers {
     }
 
     /** Postos de carregamento OpenStreetMap num raio de [radiusM] metros. */
-    suspend fun download(lat: Double, lng: Double, radiusM: Int = 10000): List<Station> = withContext(Dispatchers.IO) {
-        val q = "[out:json][timeout:15];nwr(around:$radiusM,$lat,$lng)[amenity=charging_station];out center tags 200;"
-        var last: Exception? = null
-        for (ep in ENDPOINTS) {
-            try {
-                val c = URL(ep).openConnection() as HttpURLConnection
-                try {
-                    c.requestMethod = "POST"
-                    c.doOutput = true
-                    c.connectTimeout = 6000
-                    c.readTimeout = 14000
-                    c.setRequestProperty("User-Agent", "Cockpit-Android/1.0")
-                    c.outputStream.use { it.write(("data=" + java.net.URLEncoder.encode(q, "UTF-8")).toByteArray()) }
-                    if (c.responseCode !in 200..299) error("HTTP ${c.responseCode}")
-                    val body = c.inputStream.bufferedReader().use { it.readText() }
-                    val arr = JSONObject(body).getJSONArray("elements")
-                    return@withContext (0 until arr.length()).mapNotNull { i -> toCharger(arr.getJSONObject(i)) }
-                } finally { c.disconnect() }
-            } catch (e: Exception) { last = e }
-        }
-        throw last ?: IllegalStateException()
+    suspend fun download(lat: Double, lng: Double, radiusM: Int = 20000): List<Station> {
+        val q = "[out:json][timeout:25];nwr(around:$radiusM,$lat,$lng)[amenity=charging_station];out center tags qt 800;"
+        val arr = Overpass.query(q)
+        return (0 until arr.length()).mapNotNull { i -> toCharger(arr.getJSONObject(i)) }
     }
 
     private fun toCharger(o: JSONObject): Station? {

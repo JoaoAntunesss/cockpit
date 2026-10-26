@@ -85,29 +85,11 @@ object ParkCache {
 }
 
 object Parks {
-    private val ENDPOINTS = listOf("https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter")
-
-    suspend fun download(lat: Double, lng: Double, radiusM: Int = 1500): List<ParkLot> = withContext(Dispatchers.IO) {
-        val q = "[out:json][timeout:15];nwr(around:$radiusM,$lat,$lng)[amenity=parking][access!~\"^(private|customers|permit|delivery)\$\"];out center tags 250;"
-        var last: Exception? = null
-        for (ep in ENDPOINTS) {
-            try {
-                val c = URL(ep).openConnection() as HttpURLConnection
-                try {
-                    c.requestMethod = "POST"
-                    c.doOutput = true
-                    c.connectTimeout = 6000
-                    c.readTimeout = 14000
-                    c.setRequestProperty("User-Agent", "Cockpit-Android/1.0")
-                    c.outputStream.use { it.write(("data=" + java.net.URLEncoder.encode(q, "UTF-8")).toByteArray()) }
-                    if (c.responseCode !in 200..299) error("HTTP ${c.responseCode}")
-                    val body = c.inputStream.bufferedReader().use { it.readText() }
-                    val arr = JSONObject(body).getJSONArray("elements")
-                    return@withContext (0 until arr.length()).mapNotNull { i -> toLot(arr.getJSONObject(i), lat, lng) }.sortedBy { it.distKm }
-                } finally { c.disconnect() }
-            } catch (e: Exception) { last = e }
-        }
-        throw last ?: IllegalStateException()
+    suspend fun download(lat: Double, lng: Double, radiusM: Int = 1500): List<ParkLot> {
+        val q = "[out:json][timeout:25];nwr(around:$radiusM,$lat,$lng)[amenity=parking]" +
+            "[access!~\"^(private|customers|permit|delivery)\$\"][parking!~\"^(street_side|lane)\$\"];out center tags qt 300;"
+        val arr = Overpass.query(q)
+        return (0 until arr.length()).mapNotNull { i -> toLot(arr.getJSONObject(i), lat, lng) }.sortedBy { it.distKm }
     }
 
     private fun toLot(o: JSONObject, lat0: Double, lng0: Double): ParkLot? {
@@ -161,6 +143,7 @@ fun ParkScreen(car: Vehicle, pad: PaddingValues) {
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf(false) }
     var denied by remember { mutableStateOf(false) }
+    var detail by remember { mutableStateOf("") }
     var msg by remember { mutableStateOf<String?>(null) }
     var filter by remember { mutableStateOf(0) }       // 0 todos, 1 grátis, 2 garagem
     var nav by remember { mutableStateOf<Triple<Double, Double, String>?>(null) }
@@ -170,14 +153,16 @@ fun ParkScreen(car: Vehicle, pad: PaddingValues) {
     fun search() {
         scope.launch {
             loading = true; error = false
-            val h = Loc.current(ctx)
-            if (h == null) { loading = false; error = true; return@launch }
+            val h = kotlinx.coroutines.withTimeoutOrNull(15_000L) { Loc.current(ctx) }
+            if (h == null) { loading = false; error = true; detail = t("sem localização", "no location"); return@launch }
             here = h
             try {
-                val l = Parks.download(h.first, h.second)
+                var l = kotlinx.coroutines.withTimeout(40_000L) { Parks.download(h.first, h.second) }
+                if (l.isEmpty()) l = kotlinx.coroutines.withTimeout(40_000L) { Parks.download(h.first, h.second, 3000) }
                 lots = l
                 ParkCache.set(h, l)
-            } catch (e: Exception) { error = true }
+                detail = ""
+            } catch (e: Exception) { error = true; detail = Overpass.lastError.ifBlank { e.message ?: "" } }
             loading = false
         }
     }
@@ -195,7 +180,7 @@ fun ParkScreen(car: Vehicle, pad: PaddingValues) {
     fun saveHere() {
         if (!Loc.hasPermission(ctx)) { ask(); return }
         scope.launch {
-            val h = Loc.current(ctx)
+            val h = kotlinx.coroutines.withTimeoutOrNull(15_000L) { Loc.current(ctx) }
             if (h == null) msg = t("Não consegui obter a tua localização. Liga a localização do telemóvel.", "Could not get your location. Turn on location on your phone.")
             else {
                 ParkingStore.save(ctx, car.id, h.first, h.second)
@@ -269,7 +254,8 @@ fun ParkScreen(car: Vehicle, pad: PaddingValues) {
         when {
             loading && lots.isEmpty() -> item { ShimmerRows(5, Modifier.padding(vertical = 8.dp)) }
             denied -> item { ParkMsg(t("Sem acesso à localização. Permite-o para ver os parques perto de ti.", "No location access. Allow it to see car parks near you."), t("Permitir", "Allow")) { ask() } }
-            error && lots.isEmpty() -> item { ParkMsg(t("Não consegui procurar parques. Verifica a localização e a ligação.", "Could not search car parks. Check location and connection."), t("Tentar outra vez", "Try again")) { ask() } }
+            error && lots.isEmpty() -> item { ParkMsg(t("Não consegui procurar parques. Verifica a localização e a ligação.", "Could not search car parks. Check location and connection.") + (if (detail.isNotBlank()) "\n($detail)" else ""), t("Tentar outra vez", "Try again")) { ask() } }
+            lots.isEmpty() && ParkCache.here != null && !loading -> item { ParkMsg(t("Não encontrei parques públicos num raio de 3 km. Os dados do OpenStreetMap podem estar incompletos nesta zona.", "No public car parks found within 3 km. OpenStreetMap data may be incomplete here."), t("Procurar outra vez", "Search again")) { ask() } }
             lots.isEmpty() -> item { ParkMsg(t("Procura os parques de estacionamento num raio de 1,5 km.", "Search car parks within 1.5 km."), t("Procurar", "Search")) { ask() } }
             shown.isEmpty() -> item { Text(t("Nenhum parque com este filtro.", "No car parks match this filter."), style = MaterialTheme.typography.bodyMedium) }
             else -> {
