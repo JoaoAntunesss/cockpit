@@ -80,9 +80,9 @@ private fun cardBorder() = BorderStroke(
 @Composable
 private fun SectionTitle(text: String, action: String? = null, onAction: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(width = 4.dp, height = 16.dp).background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary))))
+        Box(Modifier.size(width = 4.dp, height = 16.dp).background(MaterialTheme.colorScheme.primary))
         Spacer(Modifier.width(10.dp))
-        Text(text.uppercase(), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.6.sp, modifier = Modifier.weight(1f))
+        Text(text.uppercase(), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.6.sp, modifier = Modifier.weight(1f))
         if (action != null) TextButton(onClick = onAction) { Text(action) }
     }
 }
@@ -148,7 +148,7 @@ private fun DocRows(docs: List<Doc>, a: Actions) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(9.dp).clip(CircleShape).background(c))
                             Spacer(Modifier.width(6.dp))
-                            Text(i.text, color = c, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, fontSize = 13.sp)
+                            Text(i.text, color = c, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, fontSize = 13.sp)
                         }
                     }
                 },
@@ -202,7 +202,7 @@ private fun ServiceRings(rems: List<Reminder>, curKm: Int, onClick: () -> Unit) 
                             drawArc(c, 135f, 270f * frac.value, false, tl, Size(dia, dia), style = Stroke(st, cap = StrokeCap.Round))
                         }
                     }
-                    Text("${Math.round(target * 100)}%", fontWeight = FontWeight.Black, fontSize = 15.sp, fontFamily = FontFamily.Monospace, color = c)
+                    Text("${Math.round(target * 100)}%", fontWeight = FontWeight.Bold, fontSize = 15.sp, fontFamily = FontFamily.Monospace, color = c)
                 }
                 Text(r.name, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(i.text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -245,14 +245,14 @@ private fun FocusCard(d: CarData, curKm: Int, a: Actions) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 when (f.level) {
-                    Level.OK -> t("TUDO EM DIA · A SEGUIR", "ALL GOOD · NEXT UP")
-                    Level.SOON -> t("A PRECISAR DE ATENÇÃO", "NEEDS ATTENTION")
-                    Level.LATE -> t("EM ATRASO", "OVERDUE")
+                    Level.OK -> t("Tudo em dia · a seguir", "All good · next up")
+                    Level.SOON -> t("Precisa de atenção", "Needs attention")
+                    Level.LATE -> t("Em atraso", "Overdue")
                 },
-                style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.4.sp, color = c,
+                style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = c,
             )
             Text(f.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(f.big, fontSize = 26.sp, fontWeight = FontWeight.Black, color = c, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(f.big, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = c, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -279,7 +279,7 @@ fun HomeScreen(d: CarData, a: Actions, pad: PaddingValues) {
     ).sortedByDescending { it.date }.take(5)
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 88.dp),
+        contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 96.dp),
         verticalArrangement = Gap,
     ) {
         if (d.vehicle.monthlyBudget > 0) item { BudgetBar(monthSpend, d.vehicle.monthlyBudget) }
@@ -343,21 +343,18 @@ private fun Hero(v: Vehicle, avg: Double?, monthSpend: Double, onKm: () -> Unit 
         modifier = Modifier.fillMaxWidth(),
     ) {
         Box(
-            Modifier.background(
-                Brush.linearGradient(listOf(accent.copy(alpha = 0.30f), Color.Transparent, Brand.of(v.brand).third.copy(alpha = 0.13f)))
-            )
+            Modifier.background(accent.copy(alpha = 0.12f))
         ) {
             // Marca de água com o modelo
             Text(
-                v.model.uppercase(), fontSize = if (v.model.length <= 4) 110.sp else 64.sp, fontWeight = FontWeight.Black,
-                fontStyle = FontStyle.Italic, color = Color.White.copy(alpha = 0.05f), maxLines = 1, softWrap = false,
+                v.model.uppercase(), fontSize = if (v.model.length <= 4) 110.sp else 64.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.05f), maxLines = 1, softWrap = false,
                 modifier = Modifier.align(Alignment.BottomEnd).offset(x = 10.dp, y = 18.dp),
             )
             Column(Modifier.padding(18.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     BrandMark(Brand.of(v.brand), 34.dp, Color.White.copy(alpha = 0.10f), Color.White)
                     Column(Modifier.weight(1f)) {
-                        Text(v.name.uppercase(), fontSize = 20.sp, fontWeight = FontWeight.Black, fontStyle = FontStyle.Italic, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(v.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             "${v.fuelType} · ${v.engine} · ${v.year}".trim(' ', '·'),
                             style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.82f), maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -370,16 +367,16 @@ private fun Hero(v: Vehicle, avg: Double?, monthSpend: Double, onKm: () -> Unit 
                     Box(Modifier.size(150.dp), contentAlignment = Alignment.Center) {
                         Gauge(avg, if (avg != null) maxOf(10.0, Math.ceil(avg * 1.5)) else 10.0, accent, Modifier.fillMaxSize(), Brand.of(v.brand).second, Brand.of(v.brand).third)
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(avg?.let { fmt(it) } ?: "--.-", fontSize = 34.sp, fontWeight = FontWeight.Black, fontFamily = FontFamily.Monospace, color = accent)
-                            Text(consUnit(v.fuelType).uppercase() + " KM", fontSize = 10.sp, letterSpacing = 1.5.sp, color = Color.White.copy(alpha = 0.8f))
-                            Text(tr("MÉDIA"), fontSize = 9.sp, letterSpacing = 2.sp, color = Color.White.copy(alpha = 0.65f))
+                            Text(avg?.let { fmt(it) } ?: t("sem dados", "no data"), fontSize = if (avg != null) 36.sp else 16.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = accent)
+                            Text(consUnit(v.fuelType) + " km", fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
+                            Text(t("Média", "Average"), fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
                         }
                     }
                     Spacer(Modifier.width(8.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(t("ODÓMETRO · toca para alterar", "ODOMETER · tap to change"), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
+                        Text(t("Odómetro · toca para alterar", "Odometer · tap to change"), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.85f))
                         val kmAnim = remember { androidx.compose.animation.core.Animatable(0f) }
-                        LaunchedEffect(v.km) { kmAnim.animateTo(v.km.toFloat(), androidx.compose.animation.core.tween(1100, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+                        LaunchedEffect(v.km) { kmAnim.animateTo(v.km.toFloat(), androidx.compose.animation.core.tween(1100, easing = AppEase)) }
                         Box(Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onKm)) { Odometer(kmAnim.value.toInt(), accent) }
                         HeroStat(tr("Gasto este mês"), eur(shownSpend.toDouble()), Modifier.fillMaxWidth())
                     }
@@ -414,7 +411,7 @@ private fun Odometer(km: Int, accent: Color) {
 private fun Gauge(value: Double?, max: Double, accent: Color, modifier: Modifier = Modifier, second: Color = Color.White, third: Color = accent) {
     val frac0 = if (value == null) 0f else (value / max).coerceIn(0.0, 1.0).toFloat()
     val anim = remember { androidx.compose.animation.core.Animatable(0f) }
-    LaunchedEffect(frac0) { anim.animateTo(frac0, androidx.compose.animation.core.tween(1100, easing = androidx.compose.animation.core.FastOutSlowInEasing)) }
+    LaunchedEffect(frac0) { anim.animateTo(frac0, androidx.compose.animation.core.tween(1100, easing = AppEase)) }
     Canvas(modifier) {
         val n = 40
         val sweep = 270f
@@ -464,7 +461,7 @@ private fun HeroStat(label: String, value: String, modifier: Modifier) {
         modifier.clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.07f)).padding(12.dp, 8.dp),
     ) {
         Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
-        Text(value, fontWeight = FontWeight.Black, fontSize = 18.sp, fontFamily = FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 18.sp, fontFamily = FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -503,8 +500,8 @@ private fun ReminderBlock(r: Reminder, carKm: Int, a: Actions?, est: Double? = n
             Box(Modifier.size(10.dp).clip(CircleShape).background(c))
             Spacer(Modifier.width(6.dp))
             Text(
-                when (i.level) { Level.OK -> tr("EM DIA"); Level.SOON -> tr("EM BREVE"); Level.LATE -> tr("ATRASADO") },
-                color = c, fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, letterSpacing = 1.2.sp,
+                when (i.level) { Level.OK -> t("Em dia", "On time"); Level.SOON -> t("Em breve", "Soon"); Level.LATE -> t("Atrasado", "Overdue") },
+                color = c, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.2.sp,
             )
         }
         SegBar(i.progress.coerceIn(0.0, 1.0).toFloat(), c, Modifier.fillMaxWidth().height(12.dp))
@@ -546,11 +543,11 @@ fun FuelScreen(d: CarData, a: Actions, pad: PaddingValues, prices: PricesState, 
     val chart = st.measured.takeLast(14)
     var q by rememberSaveable { mutableStateOf("") }
     LazyColumn(
-        contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 88.dp),
+        contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 96.dp),
         verticalArrangement = Gap,
     ) {
         item {
-            Text(tr("Combustível"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, fontStyle = FontStyle.Italic)
+            Text(tr("Combustível"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text(if (isEv(d.vehicle.fuelType)) "${d.vehicle.name} · " + t("bateria de ${d.vehicle.tankL} kWh", "${d.vehicle.tankL} kWh battery") else "${d.vehicle.name} · depósito de ${d.vehicle.tankL} L", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
@@ -581,8 +578,8 @@ fun FuelScreen(d: CarData, a: Actions, pad: PaddingValues, prices: PricesState, 
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Tile(tr("Consumo médio"), st.avg?.let { fmt(it) + " " + consUnit(d.vehicle.fuelType) } ?: "—", Modifier.weight(1f))
-                Tile(tr("Preço médio"), st.pricePerL?.let { fmt(it, 3) + " €/" + qtyUnit(d.vehicle.fuelType) } ?: "—", Modifier.weight(1f))
+                Tile(tr("Consumo médio"), st.avg?.let { fmt(it) + " " + consUnit(d.vehicle.fuelType) } ?: t("sem dados", "no data"), Modifier.weight(1f))
+                Tile(tr("Preço médio"), st.pricePerL?.let { fmt(it, 3) + " €/" + qtyUnit(d.vehicle.fuelType) } ?: t("sem dados", "no data"), Modifier.weight(1f))
                 Tile(tr("Último"), dateLabel(d.fuelings.first().date), Modifier.weight(1f))
             }
         }
@@ -711,7 +708,7 @@ private fun PriceCard(fuelType: String, ps: PricesState, onRefresh: () -> Unit, 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 tr("PREÇOS MÉDIOS · PORTUGAL"), color = Color.White.copy(alpha = 0.7f),
-                style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp,
+                style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp,
                 modifier = Modifier.weight(1f),
             )
             if (ps.loading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = led)
@@ -740,7 +737,7 @@ private fun PriceCard(fuelType: String, ps: PricesState, onRefresh: () -> Unit, 
                     Modifier.width(52.dp).clip(RoundedCornerShape(8.dp)).background(tint).padding(vertical = 6.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(letter, color = onColor(tint), fontWeight = FontWeight.Black, fontSize = 18.sp, maxLines = 1)
+                    Text(letter, color = onColor(tint), fontWeight = FontWeight.Bold, fontSize = 18.sp, maxLines = 1)
                 }
                 Column(Modifier.weight(1f).padding(start = 10.dp)) {
                     Text(fuelLabel(f), color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -772,11 +769,11 @@ private fun PriceCard(fuelType: String, ps: PricesState, onRefresh: () -> Unit, 
 @Composable
 private fun Tile(label: String, value: String, modifier: Modifier) {
     Column(
-        modifier.clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(14.dp, 12.dp),
+        modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(16.dp, 12.dp),
     ) {
-        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         Text(
-            value, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, fontFamily = FontFamily.Monospace,
+            value, fontWeight = FontWeight.Bold, fontSize = 20.sp, fontFamily = FontFamily.Monospace,
             color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
     }
@@ -792,11 +789,11 @@ fun MaintScreen(d: CarData, a: Actions, pad: PaddingValues) {
     val rems = d.reminders.sortedByDescending { remInfo(it, curKm).progress }
     var q by rememberSaveable { mutableStateOf("") }
     LazyColumn(
-        contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 88.dp),
+        contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 96.dp),
         verticalArrangement = Gap,
     ) {
         item {
-            Text(tr("Manutenção"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, fontStyle = FontStyle.Italic)
+            Text(tr("Manutenção"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text("${d.vehicle.name} · ${fint(d.vehicle.km)} km", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item { SectionTitle(tr("Documentos e prazos"), tr("Novo")) { a.doc(null) } }
@@ -882,11 +879,11 @@ fun CostsScreen(d: CarData, pad: PaddingValues, openYear: () -> Unit, delExp: (E
     val colors = chartColors()
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 88.dp),
+        contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 96.dp),
         verticalArrangement = Gap,
     ) {
         item {
-            Text(tr("Gastos"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, fontStyle = FontStyle.Italic)
+            Text(tr("Gastos"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text(d.vehicle.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
@@ -909,8 +906,8 @@ fun CostsScreen(d: CarData, pad: PaddingValues, openYear: () -> Unit, delExp: (E
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Tile(tr("Total"), eur(total), Modifier.weight(1f))
-                Tile(tr("Custo por km"), if (span >= 50) fmt(total / span, 3) + " €" else "—", Modifier.weight(1f))
-                Tile(tr("Percorridos"), if (span > 0) fint(span) + " km" else "—", Modifier.weight(1f))
+                Tile(tr("Custo por km"), if (span >= 50) fmt(total / span, 3) + " €" else t("sem dados", "no data"), Modifier.weight(1f))
+                Tile(tr("Percorridos"), if (span > 0) fint(span) + " km" else t("sem dados", "no data"), Modifier.weight(1f))
             }
         }
         item { SectionTitle(tr("Por mês")) }
@@ -1162,12 +1159,12 @@ private fun InsightsCard(d: CarData, monthSpend: Double) {
         Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(Modifier.weight(1f)) {
                 Text(t("Custo por km", "Cost per km"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(perKm?.let { fmt(it, 2) + " €" } ?: "—", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                Text(perKm?.let { fmt(it, 2) + " €" } ?: "—", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 Text(t("últimos 3 meses", "last 3 months"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Column(Modifier.weight(1f)) {
                 Text(t("Previsão do mês", "Month forecast"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(forecast?.let { eur(it) } ?: "—", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                Text(forecast?.let { eur(it) } ?: "—", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 Text(
                     if (forecast != null && d.vehicle.monthlyBudget > 0) (if (forecast > d.vehicle.monthlyBudget) t("acima do orçamento", "over budget") else t("dentro do orçamento", "within budget"))
                     else t("ao ritmo atual", "at the current pace"),

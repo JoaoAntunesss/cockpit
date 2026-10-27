@@ -58,9 +58,24 @@ object Chargers {
         }.maxOrNull() ?: 0.0
     }
 
-    /** Postos de carregamento OpenStreetMap num raio de [radiusM] metros. */
-    suspend fun download(lat: Double, lng: Double, radiusM: Int = 20000): List<Station> {
-        val q = "[out:json][timeout:25];nwr(around:$radiusM,$lat,$lng)[amenity=charging_station];out center tags qt 800;"
+    /**
+     * Postos de carregamento perto de [lat],[lng].
+     * 1) Open Charge Map, se houver chave (ocmKey em gradle.properties) — mais estável.
+     * 2) OpenStreetMap (Overpass): primeiro 10 km, e 25 km se vierem poucos.
+     * Se uma fonte falhar, tenta a outra.
+     */
+    suspend fun download(lat: Double, lng: Double): List<Station> {
+        val key = BuildConfig.OCM_KEY
+        if (key.isNotBlank()) {
+            try { val l = OpenChargeMap.download(lat, lng, key); if (l.isNotEmpty()) return l } catch (e: Exception) { Overpass.lastError = "OCM: " + (e.message ?: "erro") }
+        }
+        var list = osm(lat, lng, 10000)
+        if (list.size < 5) list = try { osm(lat, lng, 25000) } catch (e: Exception) { list }
+        return list
+    }
+
+    private suspend fun osm(lat: Double, lng: Double, radiusM: Int): List<Station> {
+        val q = "[out:json][timeout:25];nwr(around:$radiusM,$lat,$lng)[amenity=charging_station];out center tags qt 600;"
         val arr = Overpass.query(q)
         return (0 until arr.length()).mapNotNull { i -> toCharger(arr.getJSONObject(i)) }
     }
@@ -91,6 +106,47 @@ object Chargers {
             address = t.optString("addr:street"), locality = t.optString("addr:city"),
             price = 0.0, updated = "", lat = lat, lng = lng, ev = true, kw = kw, info = info,
         )
+    }
+}
+
+/** Open Charge Map (openchargemap.org). Chave grátis; só é usada se existir. */
+object OpenChargeMap {
+    suspend fun download(lat: Double, lng: Double, key: String): List<Station> = withContext(Dispatchers.IO) {
+        val url = "https://api.openchargemap.io/v3/poi/?output=json&latitude=$lat&longitude=$lng&distance=25&distanceunit=KM&maxresults=300&compact=true&verbose=false&key=" + java.net.URLEncoder.encode(key, "UTF-8")
+        val c = URL(url).openConnection() as HttpURLConnection
+        try {
+            c.connectTimeout = 8000
+            c.readTimeout = 20000
+            c.setRequestProperty("User-Agent", "Cockpit-Android/2.0")
+            c.setRequestProperty("X-API-Key", key)
+            if (c.responseCode !in 200..299) error("HTTP ${c.responseCode}")
+            val arr = org.json.JSONArray(c.inputStream.bufferedReader().use { it.readText() })
+            (0 until arr.length()).mapNotNull { i ->
+                val o = arr.getJSONObject(i)
+                val a = o.optJSONObject("AddressInfo") ?: return@mapNotNull null
+                val la = a.optDouble("Latitude", Double.NaN); val ln = a.optDouble("Longitude", Double.NaN)
+                if (la.isNaN() || ln.isNaN()) return@mapNotNull null
+                val cons = o.optJSONArray("Connections")
+                var kw = 0.0
+                val plugs = LinkedHashSet<String>()
+                if (cons != null) for (j in 0 until cons.length()) {
+                    val cn = cons.getJSONObject(j)
+                    kw = maxOf(kw, cn.optDouble("PowerKW", 0.0).takeIf { !it.isNaN() } ?: 0.0)
+                    when (cn.optInt("ConnectionTypeID")) { 33, 32 -> plugs.add("CCS"); 25, 1036 -> plugs.add("Type 2"); 2 -> plugs.add("CHAdeMO"); else -> {} }
+                }
+                val points = o.optInt("NumberOfPoints", 0)
+                val info = listOfNotNull(
+                    if (kw > 0) "${if (kw % 1.0 == 0.0) kw.toInt().toString() else kw.toString()} kW" else null,
+                    plugs.joinToString(", ").ifBlank { null },
+                    if (points > 0) "$points ${if (points == 1) "ponto" else "pontos"}" else null,
+                ).joinToString(" · ")
+                Station(
+                    id = o.optInt("ID"), name = a.optString("Title").ifBlank { "Carregador" }, brand = "",
+                    address = a.optString("AddressLine1"), locality = a.optString("Town"),
+                    price = 0.0, updated = "", lat = la, lng = ln, ev = true, kw = kw, info = info,
+                )
+            }
+        } finally { c.disconnect() }
     }
 }
 

@@ -254,7 +254,7 @@ private fun PublicCars(p: PubProfile) {
                     Text(listOf(if (c.year > 0) c.year.toString() else "", c.fuel).filter { it.isNotBlank() }.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(kmText(c), fontFamily = FontFamily.Monospace, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                    Text(kmText(c), fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     if (c.avg > 0) Text(fmt(c.avg) + " L/100 km", style = MaterialTheme.typography.bodySmall)
                 }
             }

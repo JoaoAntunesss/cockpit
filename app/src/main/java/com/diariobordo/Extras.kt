@@ -38,8 +38,8 @@ fun KmCard(est: Int, current: Int, onYes: () -> Unit, onFix: () -> Unit) {
         shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(tr("QUILÓMETROS ESTIMADOS"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("~${fint(est)} km", fontSize = 28.sp, fontWeight = FontWeight.Black, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
+            Text(t("Quilómetros estimados", "Estimated kilometres"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("~${fint(est)} km", fontSize = 28.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.primary)
             Text(
                 t("Pelo teu ritmo, o carro já deve ir nos ${fint(est)} km. O último valor que tenho é ${fint(current)} km. Os avisos já usam a estimativa. Está certo?", "At your pace the car should be around ${fint(est)} km by now. The last value I have is ${fint(current)} km. Alerts already use the estimate. Is that right?"),
                 style = MaterialTheme.typography.bodyMedium,

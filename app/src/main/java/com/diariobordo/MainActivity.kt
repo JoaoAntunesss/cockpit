@@ -188,7 +188,7 @@ fun AppRoot(vm: MainVm, go: String?, onGoDone: () -> Unit) {
                 "fuel" -> Dlg.Fuel(null)
                 "serv" -> Dlg.Serv(null)
                 "exp" -> Dlg.Exp(null)
-                "map" -> { evMode = d?.let { isEv(it.vehicle.fuelType) } ?: false; Dlg.MapD }
+                "map" -> { evMode = d?.let { isEv(it.vehicle.fuelType) || isPhev(it.vehicle.fuelType) } ?: false; Dlg.MapD }
                 else -> Dlg.None
             }
             onGoDone()
@@ -270,7 +270,7 @@ fun AppRoot(vm: MainVm, go: String?, onGoDone: () -> Unit) {
                     },
                     actions = {
                         IconButton(onClick = { vm.loadCompare(); dlg = Dlg.Comm }) { Icon(Icons.Filled.Groups, t("Comunidade", "Community")) }
-                        if (d != null) IconButton(onClick = { evMode = isEv(d.vehicle.fuelType); dlg = Dlg.MapD }) { Icon(Icons.Filled.Map, tr("Mapa")) }
+                        if (d != null) IconButton(onClick = { evMode = isEv(d.vehicle.fuelType) || isPhev(d.vehicle.fuelType); dlg = Dlg.MapD }) { Icon(Icons.Filled.Map, tr("Mapa")) }
                         IconButton(onClick = { dlg = Dlg.Account }) {
                             Icon(if (acc.email != null) Icons.Filled.CloudDone else Icons.Filled.AccountCircle, tr("Conta e nuvem"))
                         }
@@ -392,7 +392,7 @@ fun AppRoot(vm: MainVm, go: String?, onGoDone: () -> Unit) {
             Dlg.Year -> d?.let { YearSheet(it, close) }
             Dlg.Sale -> d?.let { SaleDialog(it, tires, close) }
             Dlg.Comm -> CommunitySheet(cmp, acc.email != null, { dlg = Dlg.Account }, close)
-            Dlg.MapD -> d?.let { MapDialog(it.vehicle, evMode, near, { vm.findNearby(it.vehicle.fuelType, evMode) }, close) }
+            Dlg.MapD -> d?.let { MapDialog(it.vehicle, evMode, near, { ev -> evMode = ev; vm.findNearby(it.vehicle.fuelType, ev) }, close) }
             Dlg.Nearby -> d?.let {
                 NearbySheet(it.vehicle, evMode, near, FuelPrices.slugFor(it.vehicle.fuelType)?.let { s -> pr.map[s]?.avg }, { vm.findNearby(it.vehicle.fuelType, evMode) }, { dlg = Dlg.MapD }, close)
             }

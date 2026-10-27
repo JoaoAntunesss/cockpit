@@ -55,7 +55,7 @@ fun LockScreen() {
             Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Icon(Icons.Filled.Lock, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(16.dp))
-                Text("Cockpit", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
+                Text("Cockpit", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
                 Text(t("A app está bloqueada.", "The app is locked."), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(24.dp))

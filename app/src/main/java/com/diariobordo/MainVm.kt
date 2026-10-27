@@ -121,7 +121,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
                 val here = kotlinx.coroutines.withTimeoutOrNull(15_000L) { Loc.current(getApplication()) }
                 if (here == null) { _nearby.value = NearbyState(locError = true); return@launch }
                 try {
-                    val list = kotlinx.coroutines.withTimeout(45_000L) { Chargers.download(here.first, here.second)
+                    val list = kotlinx.coroutines.withTimeout(75_000L) { Chargers.download(here.first, here.second)
                         .map { it.copy(distKm = distKm(here.first, here.second, it.lat, it.lng)) }.sortedBy { it.distKm } }
                     _nearby.value = NearbyState(stations = list, done = true)
                 } catch (e: Exception) { _nearby.value = NearbyState(error = true, detail = Overpass.lastError.ifBlank { e.message ?: "" }) }

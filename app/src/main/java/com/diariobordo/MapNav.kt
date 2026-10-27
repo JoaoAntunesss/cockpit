@@ -93,7 +93,9 @@ private fun readParking(ctx: Context, carId: Long): Parking? {
 }
 
 @Composable
-fun MapDialog(car: Vehicle, evMode: Boolean, st: NearbyState, onSearch: () -> Unit, onClose: () -> Unit) {
+fun MapDialog(car: Vehicle, evMode0: Boolean, st: NearbyState, onSearch: (Boolean) -> Unit, onClose: () -> Unit) {
+    var evMode by remember { mutableStateOf(evMode0) }
+    val canFuel = Stations.fuelIdFor(car.fuelType) != null
     val ctx = LocalContext.current
     val primary = MaterialTheme.colorScheme.primary
     var here by remember { mutableStateOf<Pair<Double, Double>?>(null) }
@@ -132,10 +134,10 @@ fun MapDialog(car: Vehicle, evMode: Boolean, st: NearbyState, onSearch: () -> Un
         if (here == null) msg = tr("Não consegui obter a tua localização. Liga a localização do telemóvel.")
     }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
-        if (r.values.any { it }) { onSearch() } else msg = tr("Sem acesso à localização.")
+        if (r.values.any { it }) { onSearch(evMode) } else msg = tr("Sem acesso à localização.")
     }
     LaunchedEffect(Unit) {
-        if (Loc.hasPermission(ctx)) { onSearch() }
+        if (Loc.hasPermission(ctx)) { onSearch(evMode) }
         else launcher.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION))
     }
     LaunchedEffect(st.done, Loc.hasPermission(ctx)) { if (Loc.hasPermission(ctx)) locate() }
@@ -194,6 +196,22 @@ fun MapDialog(car: Vehicle, evMode: Boolean, st: NearbyState, onSearch: () -> Un
                         Icon(Icons.Filled.MyLocation, tr("Centrar em mim"))
                     }
                 }
+                // Escolher o que ver no mapa: postos de combustível ou carregadores (qualquer carro)
+                Row(
+                    Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 72.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (canFuel) FilterChip(
+                        selected = !evMode, onClick = { if (evMode) { evMode = false; selected = null; onSearch(false) } },
+                        label = { Text(t("Combustível", "Fuel")) }, leadingIcon = { Icon(Icons.Filled.LocalGasStation, null) },
+                        colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.94f)),
+                    )
+                    FilterChip(
+                        selected = evMode, onClick = { if (!evMode) { evMode = true; selected = null; onSearch(true) } },
+                        label = { Text(t("Carregadores", "Chargers")) }, leadingIcon = { Icon(Icons.Filled.EvStation, null) },
+                        colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.94f)),
+                    )
+                }
 
                 // Fundo
                 Column(
@@ -214,7 +232,7 @@ fun MapDialog(car: Vehicle, evMode: Boolean, st: NearbyState, onSearch: () -> Un
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(s.name, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                                    if (!s.ev) Text("${fmt(s.price, 3)} €/L", fontWeight = FontWeight.Black, color = primary) else if (s.kw > 0) Text("${if (s.kw % 1.0 == 0.0) s.kw.toInt() else s.kw} kW", fontWeight = FontWeight.Black, color = primary)
+                                    if (!s.ev) Text("${fmt(s.price, 3)} €/L", fontWeight = FontWeight.Bold, color = primary) else if (s.kw > 0) Text("${if (s.kw % 1.0 == 0.0) s.kw.toInt() else s.kw} kW", fontWeight = FontWeight.Bold, color = primary)
                                 }
                                 Text("${fmt(s.distKm)} km · " + (if (s.ev) listOf(s.info, s.locality).filter { it.isNotBlank() }.joinToString(" · ") else "${s.address}, ${s.locality}"), style = MaterialTheme.typography.bodySmall)
                                 Button(
@@ -224,7 +242,22 @@ fun MapDialog(car: Vehicle, evMode: Boolean, st: NearbyState, onSearch: () -> Un
                             }
                         }
                     }
-                    if (!st.done && st.error) Text(tr("Não foi possível obter os postos."), style = MaterialTheme.typography.bodySmall)
+                    if (st.error || st.locError || (st.done && st.stations.isEmpty())) Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                when {
+                                    st.locError -> t("Não consegui obter a tua localização. Liga a localização do telemóvel e tenta outra vez.", "Could not get your location. Turn on location and try again.")
+                                    st.error && evMode -> t("O serviço de carregadores não respondeu.", "The charger service did not respond.")
+                                    st.error -> tr("Não foi possível obter os postos.")
+                                    evMode -> t("Não há carregadores registados num raio de 25 km.", "No chargers listed within 25 km.")
+                                    else -> t("Sem postos perto de ti.", "No stations near you.")
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            if (st.detail.isNotBlank()) Text(st.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            FilledTonalButton(onClick = { onSearch(evMode) }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Filled.Refresh, null); Spacer(Modifier.width(8.dp)); Text(t("Tentar outra vez", "Try again")) }
+                        }
+                    }
                     if (st.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
                 }
             }

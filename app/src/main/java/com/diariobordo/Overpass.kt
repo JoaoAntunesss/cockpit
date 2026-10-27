@@ -22,6 +22,7 @@ object Overpass {
         "https://overpass.kumi.systems/api/interpreter",
         "https://overpass.private.coffee/api/interpreter",
         "https://overpass.openstreetmap.fr/api/interpreter",
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     )
 
     /** Motivo da última falha (para mostrar no ecrã e perceber o que se passa). */
@@ -34,7 +35,7 @@ object Overpass {
             c.doOutput = true
             c.connectTimeout = 8000
             c.readTimeout = 25000
-            c.setRequestProperty("User-Agent", "Cockpit-Android/1.9")
+            c.setRequestProperty("User-Agent", "Cockpit-Android/2.0 (github.com/JoaoAntunesss/cockpit)")
             c.setRequestProperty("Accept", "application/json")
             c.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
             c.outputStream.use { it.write(("data=" + URLEncoder.encode(query, "UTF-8")).toByteArray()) }

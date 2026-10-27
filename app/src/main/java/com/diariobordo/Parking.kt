@@ -239,7 +239,7 @@ fun ParkScreen(car: Vehicle, pad: PaddingValues) {
         }
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(t("Parques perto de mim", "Car parks near me").uppercase(), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                Text(t("Parques perto de mim", "Car parks near me").uppercase(), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(onClick = { ask() }, enabled = !loading) { Icon(Icons.Filled.Refresh, t("Procurar outra vez", "Search again")) }
                 if (lots.isNotEmpty()) TextButton(onClick = { showMap = true }) { Icon(Icons.Filled.Map, null); Spacer(Modifier.width(6.dp)); Text(t("Mapa", "Map")) }
             }

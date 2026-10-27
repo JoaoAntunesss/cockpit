@@ -58,7 +58,7 @@ fun Onboarding(onDone: () -> Unit) {
                         contentAlignment = Alignment.Center,
                     ) { Icon(pages[i].first, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer) }
                     Spacer(Modifier.height(32.dp))
-                    Text(pages[i].second, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, textAlign = TextAlign.Center, modifier = Modifier.alpha(al))
+                    Text(pages[i].second, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.alpha(al))
                     Spacer(Modifier.height(12.dp))
                     Text(pages[i].third, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.alpha(al))
                 }

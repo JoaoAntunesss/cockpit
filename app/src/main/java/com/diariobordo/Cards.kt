@@ -80,7 +80,7 @@ fun StationMark(sb: StationBrand, size: Dp) {
     fun Mono() {
         Box(Modifier.fillMaxSize().background(sb.color), contentAlignment = Alignment.Center) {
             if (sb.mono.isBlank()) Icon(Icons.Filled.CreditCard, null, Modifier.size(size * 0.5f), tint = onColor(sb.color))
-            else Text(sb.mono, color = onColor(sb.color), fontWeight = FontWeight.Black, fontSize = (size.value * 0.36f).sp)
+            else Text(sb.mono, color = onColor(sb.color), fontWeight = FontWeight.Bold, fontSize = (size.value * 0.36f).sp)
         }
     }
     Box(Modifier.size(size).clip(CircleShape)) {
@@ -166,7 +166,7 @@ fun scanCodeFromImage(ctx: Context, uri: Uri, onResult: (String, String) -> Unit
 @Composable
 fun CardsScreen(cards: List<FuelCard>, pad: PaddingValues, onOpen: (FuelCard) -> Unit) {
     LazyColumn(
-        contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 88.dp),
+        contentPadding = PaddingValues(16.dp, pad.calculateTopPadding() + 4.dp, 16.dp, pad.calculateBottomPadding() + 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { Text(tr("Cartões"), style = MaterialTheme.typography.headlineSmall) }

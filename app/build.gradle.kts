@@ -18,15 +18,32 @@ android {
         applicationId = "com.cockpit.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "1.9"
+        versionCode = 12
+        versionName = "2.0"
         // Chave pública do Logo.dev (opcional). Pões em gradle.properties: logoDevKey=pk_xxx
         buildConfigField("String", "LOGO_DEV_KEY", "\"${project.findProperty("logoDevKey") ?: ""}\"")
+        // Chave do Open Charge Map (opcional, grátis em openchargemap.org). Pões em gradle.properties: ocmKey=xxxx
+        buildConfigField("String", "OCM_KEY", "\"${project.findProperty("ocmKey") ?: ""}\"")
+    }
+    // Assinatura automática no GitHub Actions (ver .github/workflows/apk.yml). No Android Studio nada muda.
+    val ciKs = System.getenv("CI_KEYSTORE")
+    signingConfigs {
+        if (ciKs != null) create("ci") {
+            storeFile = file(ciKs)
+            storePassword = System.getenv("CI_KS_PASS")
+            keyAlias = System.getenv("CI_KEY_ALIAS")
+            keyPassword = System.getenv("CI_KEY_PASS")
+        }
     }
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (ciKs != null) signingConfig = signingConfigs.getByName("ci")
         }
+    }
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

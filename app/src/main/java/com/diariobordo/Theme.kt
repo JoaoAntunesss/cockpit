@@ -147,6 +147,9 @@ object UiPrefs {
     fun setLed(ctx: Context, v: Int) { led = v; ctx.getSharedPreferences("diario", 0).edit().putInt("led_color", v).apply() }
 }
 
+/** Curva de movimento: desacelera até parar (cubic-bezier 0.22, 1, 0.36, 1). */
+val AppEase = androidx.compose.animation.core.CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
+
 fun onColor(c: Color): Color = if (c.luminance() > 0.18f) Color(0xFF14161A) else Color.White
 
 // Cores dos gráficos (fixas por categoria, nunca mudam com a marca)
@@ -185,11 +188,11 @@ fun GarageTheme(brand: Brand, content: @Composable () -> Unit) {
             primaryContainer = container, onPrimaryContainer = ink,
             secondaryContainer = container, onSecondaryContainer = ink,
             background = bg, onBackground = ink, surface = bg, onSurface = ink,
-            surfaceVariant = lerp(base, accent, 0.10f), onSurfaceVariant = ink.copy(alpha = 0.66f),
+            surfaceVariant = lerp(base, accent, 0.10f), onSurfaceVariant = ink.copy(alpha = 0.80f),
             surfaceContainer = lerp(Color(0xFF0F1115), accent, 0.05f),
             surfaceContainerHigh = lerp(Color(0xFF14171C), accent, 0.08f),
             surfaceContainerHighest = lerp(Color(0xFF191C22), accent, 0.10f),
-            outline = ink.copy(alpha = 0.40f), outlineVariant = lerp(Color(0xFF23262D), accent, 0.20f),
+            outline = ink.copy(alpha = 0.55f), outlineVariant = lerp(Color(0xFF2A2E36), accent, 0.22f),
             secondary = brand.second, tertiary = brand.third,
         )
     } else {
@@ -204,7 +207,7 @@ fun GarageTheme(brand: Brand, content: @Composable () -> Unit) {
             primaryContainer = container, onPrimaryContainer = ink,
             secondaryContainer = container, onSecondaryContainer = ink,
             background = bg, onBackground = ink, surface = bg, onSurface = ink,
-            surfaceVariant = lerp(Color(0xFFE9ECF0), accent, 0.06f), onSurfaceVariant = ink.copy(alpha = 0.66f),
+            surfaceVariant = lerp(Color(0xFFE9ECF0), accent, 0.06f), onSurfaceVariant = ink.copy(alpha = 0.74f),
             surfaceContainer = Color.White,
             surfaceContainerHigh = lerp(Color.White, accent, 0.05f),
             surfaceContainerHighest = lerp(Color(0xFFEEF0F3), accent, 0.06f),
@@ -214,14 +217,14 @@ fun GarageTheme(brand: Brand, content: @Composable () -> Unit) {
     }
     val d = Typography()
     val type = d.copy(
-        headlineSmall = d.headlineSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp),
+        headlineSmall = d.headlineSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.25).sp),
         titleLarge = d.titleLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.sp),
         titleMedium = d.titleMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.2.sp),
-        labelSmall = d.labelSmall.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp),
+        labelSmall = d.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.2.sp),
     )
     val shapes = Shapes(
-        extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(8.dp), medium = RoundedCornerShape(12.dp),
-        large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(22.dp),
+        extraSmall = RoundedCornerShape(4.dp), small = RoundedCornerShape(8.dp), medium = RoundedCornerShape(12.dp),
+        large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(24.dp),
     )
     MaterialTheme(colorScheme = scheme, typography = type, shapes = shapes, content = content)
 }

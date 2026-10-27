@@ -80,7 +80,7 @@ fun YearSheet(d: CarData, onClose: () -> Unit) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 years.take(5).forEach { yr -> FilterChip(selected = year == yr, onClick = { year = yr }, label = { Text(yr.toString()) }) }
             }
-            Text(eur(y.total), fontSize = 40.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+            Text(eur(y.total), fontSize = 40.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             Text(t("gastos em ${y.year} com ${d.vehicle.name}", "spent in ${y.year} on ${d.vehicle.name}"), color = MaterialTheme.colorScheme.onSurfaceVariant)
             val lines = buildList {
                 add(t("Combustível", "Fuel") to eur(y.fuel))

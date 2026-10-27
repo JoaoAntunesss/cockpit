@@ -280,7 +280,7 @@ fun FuelForm(
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Text(tV?.let { eur(it) } ?: "— €", fontSize = 34.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                Text(tV?.let { eur(it) } ?: "— €", fontSize = 34.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 Text(
                     (if (ev) t("Preço por kWh", "Price per kWh") else t("Preço por litro", "Price per litre")) + ": ${ppl?.let { fmt(it, 3) + " €/$u" } ?: "—"}" + (todayAvg?.takeIf { !ev }?.let { t(" · média hoje ", " · average today ") + "${fmt(it, 3)} €/L" } ?: ""),
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,

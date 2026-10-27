@@ -1,0 +1,43 @@
+name: Build APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.9' }
+      - name: Firebase config (optional secret GOOGLE_SERVICES_JSON)
+        env: { GSJ: '${{ secrets.GOOGLE_SERVICES_JSON }}' }
+        run: if [ -n "$GSJ" ]; then printf '%s' "$GSJ" > app/google-services.json; echo "Firebase on"; else echo "Firebase off (local data only)"; fi
+      - name: Signing key (your own if the KEYSTORE_B64 secret exists, otherwise the CI key)
+        env:
+          KB64: '${{ secrets.KEYSTORE_B64 }}'
+          KPASS: '${{ secrets.KEYSTORE_PASS }}'
+          KALIAS: '${{ secrets.KEY_ALIAS }}'
+          KKPASS: '${{ secrets.KEY_PASS }}'
+        run: |
+          if [ -n "$KB64" ]; then
+            echo "$KB64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            { echo "CI_KEYSTORE=$RUNNER_TEMP/release.jks"; echo "CI_KS_PASS=$KPASS"; echo "CI_KEY_ALIAS=$KALIAS"; echo "CI_KEY_PASS=${KKPASS:-$KPASS}"; } >> "$GITHUB_ENV"
+          else
+            { echo "CI_KEYSTORE=$GITHUB_WORKSPACE/ci/cockpit-ci.p12"; echo "CI_KS_PASS=cockpitci"; echo "CI_KEY_ALIAS=cockpit"; echo "CI_KEY_PASS=cockpitci"; } >> "$GITHUB_ENV"
+          fi
+      - name: Build
+        run: gradle assembleRelease --no-daemon --stacktrace
+      - name: Publish build
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk cockpit-build.apk
+          gh release delete build --yes --cleanup-tag || true
+          gh release create build cockpit-build.apk --prerelease --title "Cockpit (automatic build)" --notes "Built by GitHub Actions from the latest commit on main. Prerelease, so the in-app updater keeps using your normal releases."
+      - uses: actions/upload-artifact@v4
+        with: { name: cockpit-apk, path: cockpit-build.apk }
