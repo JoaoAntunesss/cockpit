@@ -18,10 +18,10 @@ import java.net.URLEncoder
  */
 object Overpass {
     private val ENDPOINTS = listOf(
+        "https://overpass.openstreetmap.fr/api/interpreter",
         "https://overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
         "https://overpass.private.coffee/api/interpreter",
-        "https://overpass.openstreetmap.fr/api/interpreter",
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     )
 
@@ -52,17 +52,31 @@ object Overpass {
         }
     }
 
+    /**
+     * Pergunta a todos os servidores ao mesmo tempo. Fica com a primeira resposta com dados;
+     * uma resposta vazia só é aceite se nenhum outro servidor trouxer dados em poucos segundos
+     * (alguns espelhos respondem logo, mas vazios ou desatualizados).
+     */
     suspend fun query(query: String): JSONArray {
         val results = Channel<Result<JSONArray>>(ENDPOINTS.size)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         try {
             ENDPOINTS.forEach { ep -> scope.launch { results.send(runCatching { fetch(ep, query) }) } }
             val errors = mutableListOf<String>()
-            for (i in ENDPOINTS.indices) {
-                val r = results.receive()
-                if (r.isSuccess) { lastError = ""; return r.getOrThrow() }
-                errors.add(r.exceptionOrNull()?.let { it.message ?: it.javaClass.simpleName } ?: "erro")
+            var empty: JSONArray? = null
+            var emptyAt = 0L
+            var got = 0
+            while (got < ENDPOINTS.size) {
+                val r = if (empty == null) results.receive()
+                        else kotlinx.coroutines.withTimeoutOrNull(maxOf(1L, 6000 - (System.currentTimeMillis() - emptyAt))) { results.receive() } ?: break
+                got++
+                if (r.isSuccess) {
+                    val arr = r.getOrThrow()
+                    if (arr.length() > 0) { lastError = ""; return arr }
+                    if (empty == null) { empty = arr; emptyAt = System.currentTimeMillis() }
+                } else errors.add(r.exceptionOrNull()?.let { it.message ?: it.javaClass.simpleName } ?: "erro")
             }
+            if (empty != null) { lastError = ""; return empty }
             lastError = errors.distinct().joinToString(" · ")
             throw IllegalStateException(lastError)
         } finally {

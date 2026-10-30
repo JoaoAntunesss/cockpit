@@ -30,43 +30,40 @@ data class CarData(
     val docs: List<Doc> = emptyList(),
 )
 
-// ---------- Consumo real: só entre dois depósitos cheios ----------
+// ---------- Consumo ----------
 
 data class FuelRow(val f: Fueling, val cons: Double?, val kmIv: Int, val lIv: Double)
 
 /**
- * Consumo com abastecimentos parciais.
- * O primeiro abastecimento é só ponto de partida. A partir daí, os litros de cada abastecimento
- * repõem o que foi gasto desde o anterior. Um troço fecha com depósito cheio ou quando já
- * passaram MIN_KM km (evita valores absurdos com 5 L e 40 km). Depósito cheio é mais exato,
- * mas já não é obrigatório.
+ * Consumo entre abastecimentos, como as pessoas o contam: "pus 14,8 L e fiz 225 km".
+ * Os litros de um abastecimento contam para os km feitos até ao abastecimento seguinte.
+ * Quando os dois abastecimentos são de depósito cheio (ou o anterior é o ponto de partida),
+ * usa-se o método exato: os litros do segundo repõem o que se gastou.
+ * Troços muito curtos juntam-se até MIN_KM (evita valores absurdos com 5 L e 40 km).
+ * O consumo fica no abastecimento que fecha o troço.
  */
-private const val MIN_KM = 200
+private const val MIN_KM = 150
 
 fun fuelRows(list: List<Fueling>): List<FuelRow> {
-    var anchorKm: Int? = null
-    var acc = 0.0
-    return list.sortedWith(compareBy({ it.km }, { it.date })).map { e ->
-        var cons: Double? = null
-        var kmIv = 0
-        var lIv = 0.0
-        val a = anchorKm
-        if (a == null) {
-            anchorKm = e.km
-        } else if (e.km > a) {
-            acc += e.liters
-            if (e.full || e.km - a >= MIN_KM) {
-                kmIv = e.km - a
-                lIv = acc
-                cons = acc / kmIv * 100
-                anchorKm = e.km
-                acc = 0.0
-            }
-        } else {
-            acc += e.liters
-        }
-        FuelRow(e, cons, kmIv, lIv)
+    val s = list.sortedWith(compareBy({ it.km }, { it.date }))
+    val out = ArrayList<FuelRow>(s.size)
+    var accL = 0.0
+    var accKm = 0
+    s.forEachIndexed { i, cur ->
+        if (i == 0) { out += FuelRow(cur, null, 0, 0.0); return@forEachIndexed }
+        val prev = s[i - 1]
+        val dk = cur.km - prev.km
+        if (dk <= 0) { out += FuelRow(cur, null, 0, 0.0); return@forEachIndexed }
+        val exact = (prev.full && cur.full) || prev.liters == 0.0
+        accL += if (exact) cur.liters else prev.liters
+        accKm += dk
+        if (exact || cur.full || accKm >= MIN_KM) {
+            out += FuelRow(cur, accL / accKm * 100, accKm, accL)
+            accL = 0.0
+            accKm = 0
+        } else out += FuelRow(cur, null, 0, 0.0)
     }
+    return out
 }
 
 fun weighted(rows: List<FuelRow>): Double? {
