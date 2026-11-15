@@ -43,7 +43,7 @@ Kotlin, Jetpack Compose (Material 3), Room, WorkManager, Firebase (Auth and Real
 
 ## Privacy
 
-Your data stays on your phone. It only leaves if you sign in with Google and turn on cloud backup, or if you use the community or the shared car. Location is used only for nearby stations, chargers and car parks, and to take you back to your car.
+Your data stays on your phone. To count installs, the app sends a random ID and its version at most once a day (no car data, no location, nothing tied to you). Your data only leaves if you sign in with Google and turn on cloud backup, or if you use the community or the shared car. Location is used only for nearby stations, chargers and car parks, and to take you back to your car.
 
 ## Credits
 

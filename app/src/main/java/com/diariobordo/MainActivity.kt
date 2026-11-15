@@ -112,6 +112,7 @@ class MainActivity : ComponentActivity() {
         Lang.load(this)
         AlertWorker.schedule(this)
         PriceWorker.schedule(this)
+        Installs.ping(this)
         launchAction.value = intent?.getStringExtra("go")
         AppLock.initial(this)
         setContent { if (AppLock.locked) LockScreen() else AppRoot(vm, launchAction.value) { launchAction.value = null } }

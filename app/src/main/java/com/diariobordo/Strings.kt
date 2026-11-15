@@ -113,6 +113,7 @@ private val EN_TEXT: Map<String, String> = mapOf(
     "Créditos" to "Credits",
     "Mapas © OpenStreetMap contributors. Preços dos combustíveis: DGEG. Símbolos das marcas: Simple Icons e Logo.dev. " to "Maps © OpenStreetMap contributors. Fuel prices: DGEG. Brand symbols: Simple Icons and Logo.dev. ",
     "Os teus dados ficam neste telemóvel e, se entrares com Google, na tua cópia privada na nuvem." to "Your data stays on this phone and, if you sign in with Google, in your private cloud copy.",
+    "Para contarmos instalações, a app envia uma vez por dia um identificador aleatório e a versão, sem dados teus." to "To count installs, the app sends a random ID and its version once a day, with none of your data.",
     "Só tens um carro. Quando adicionares outro, a comparação fica completa." to "You only have one car. Add another to complete the comparison.",
     "Gasto médio por mês" to "Average monthly spend",
     "Gasto nos últimos 12 meses" to "Spent in the last 12 months",

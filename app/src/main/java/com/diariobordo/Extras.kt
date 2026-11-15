@@ -215,7 +215,8 @@ fun SettingsSheet(hasCar: Boolean, onPdf: () -> Unit, onCsv: () -> Unit, onImpor
             Text(t("Versão ", "Version ") + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 tr("Mapas © OpenStreetMap contributors. Preços dos combustíveis: DGEG. Símbolos das marcas: Simple Icons e Logo.dev. ") +
-                    tr("Os teus dados ficam neste telemóvel e, se entrares com Google, na tua cópia privada na nuvem."),
+                    tr("Os teus dados ficam neste telemóvel e, se entrares com Google, na tua cópia privada na nuvem.") + " " +
+                    tr("Para contarmos instalações, a app envia uma vez por dia um identificador aleatório e a versão, sem dados teus."),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
