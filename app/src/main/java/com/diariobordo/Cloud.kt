@@ -70,7 +70,19 @@ object Cloud {
         val web = webClientId(activity) ?: error(tr("Falta o cliente web. Ativa o login Google na Firebase e volta a descarregar o google-services.json."))
         val option = GetGoogleIdOption.Builder().setFilterByAuthorizedAccounts(false).setServerClientId(web).build()
         val req = GetCredentialRequest.Builder().addCredentialOption(option).build()
-        val res = CredentialManager.create(activity).getCredential(activity, req)
+        val res = try {
+            CredentialManager.create(activity).getCredential(activity, req)
+        } catch (e: androidx.credentials.exceptions.NoCredentialException) {
+            // Telemóvel sem conta Google: abre o ecrã do Android para adicionar uma.
+            try {
+                activity.startActivity(android.content.Intent(android.provider.Settings.ACTION_ADD_ACCOUNT)
+                    .putExtra(android.provider.Settings.EXTRA_ACCOUNT_TYPES, arrayOf("com.google")))
+            } catch (_: Exception) {}
+            error(t("Não há nenhuma conta Google neste telemóvel. Adiciona uma e volta a carregar em Continuar com Google.",
+                "There is no Google account on this phone. Add one and tap Continue with Google again."))
+        } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
+            error(t("Escolhe uma conta para continuar.", "Pick an account to continue."))
+        }
         val cred = res.credential
         if (cred is CustomCredential && cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
             val g = GoogleIdTokenCredential.createFrom(cred.data)

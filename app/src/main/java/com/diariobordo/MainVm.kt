@@ -78,7 +78,9 @@ class MainVm(app: Application) : AndroidViewModel(app) {
                 val msg = block()
                 _account.value = _account.value.copy(busy = false, message = msg ?: ok, email = Cloud.email(ctxApp))
             } catch (e: Exception) {
-                _account.value = _account.value.copy(busy = false, message = t("Não correu bem: ", "Something went wrong: ") + (e.message ?: t("erro desconhecido", "unknown error")), email = Cloud.email(ctxApp))
+                val m = e.message ?: t("erro desconhecido", "unknown error")
+                val own = e is IllegalStateException
+                _account.value = _account.value.copy(busy = false, message = if (own) m else t("Não correu bem: ", "Something went wrong: ") + m, email = Cloud.email(ctxApp))
             }
         }
     }
