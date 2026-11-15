@@ -14,6 +14,7 @@ A logbook for your car, on Android. Fuel consumption, maintenance, expenses, dea
 - **Parking:** save where you parked, get guided back to the car and search nearby car parks.
 - **Widgets:** your car, fuel prices, one-tap "Refuel" and reminders.
 - **Cards:** fuel and loyalty cards with barcodes.
+- **Account:** Google sign-in on first launch (needed for cloud backup and moving to a new phone).
 - **Extras:** shared car, community, search in your histories, lock with your phone's PIN or fingerprint, backup to a file and to the cloud, CSV import, car sale report, Portuguese and English.
 - **In-app updates:** Settings > Check for updates.
 
@@ -43,7 +44,7 @@ Kotlin, Jetpack Compose (Material 3), Room, WorkManager, Firebase (Auth and Real
 
 ## Privacy
 
-Your data stays on your phone. To count installs, the app sends a random ID and its version at most once a day (no car data, no location, nothing tied to you). Your data only leaves if you sign in with Google and turn on cloud backup, or if you use the community or the shared car. Location is used only for nearby stations, chargers and car parks, and to take you back to your car.
+You sign in with your Google account when you first open the app. Your data stays on your phone: it only leaves if you turn on cloud backup, or if you use the community or the shared car. Location is used only for nearby stations, chargers and car parks, and to take you back to your car.
 
 ## Credits
 

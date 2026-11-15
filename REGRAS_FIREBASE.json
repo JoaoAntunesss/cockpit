@@ -105,21 +105,6 @@
           ".write": "auth != null && root.child('shared').child($code).child('members').child(auth.uid).exists()"
         }
       }
-    },
-    "installs": {
-      "$id": {
-        ".read": false,
-        ".write": "$id.matches(/^[0-9a-f-]{36}$/) && newData.exists()",
-        ".validate": "newData.hasChildren(['last','v']) && newData.child('last').isNumber() && newData.child('last').val() <= now && newData.child('v').isString() && newData.child('v').val().length <= 20 && (!data.exists() || !newData.child('first').exists() || newData.child('first').val() === data.child('first').val())",
-        "first": {
-          ".validate": "newData.isNumber() && newData.val() <= now"
-        },
-        "last": {},
-        "v": {},
-        "$other": {
-          ".validate": false
-        }
-      }
     }
   }
 }

@@ -112,7 +112,6 @@ class MainActivity : ComponentActivity() {
         Lang.load(this)
         AlertWorker.schedule(this)
         PriceWorker.schedule(this)
-        Installs.ping(this)
         launchAction.value = intent?.getStringExtra("go")
         AppLock.initial(this)
         setContent { if (AppLock.locked) LockScreen() else AppRoot(vm, launchAction.value) { launchAction.value = null } }
@@ -412,6 +411,10 @@ fun AppRoot(vm: MainVm, go: String?, onGoDone: () -> Unit) {
         }
         AnimatedVisibility(!onboarded, enter = fadeIn(), exit = fadeOut(tween(300)) + slideOutVertically(tween(300)) { it / 6 }) {
             Onboarding { ctx.getSharedPreferences("diario", 0).edit().putBoolean("onboarded", true).apply(); onboarded = true }
+        }
+        // Login Google obrigatório (só quando a app tem Firebase; sem google-services.json funciona como antes).
+        AnimatedVisibility(onboarded && acc.configured && acc.email == null, enter = fadeIn(), exit = fadeOut(tween(300))) {
+            SignInGate(acc) { (ctx as? Activity)?.let { vm.signIn(it) } }
         }
     }
 }

@@ -80,3 +80,38 @@ fun Onboarding(onDone: () -> Unit) {
     }
 }
 
+
+
+/** Ecrã de entrada: o Cockpit pede a conta Google antes de começar. Os dados continuam no telemóvel. */
+@Composable
+fun SignInGate(acc: AccountState, onSignIn: () -> Unit) {
+    Surface(Modifier.fillMaxSize().pointerInput(Unit) {}, color = MaterialTheme.colorScheme.background) {
+        Column(
+            Modifier.fillMaxSize().systemBarsPadding().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.weight(1f))
+            Box(
+                Modifier.size(132.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.AccountCircle, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer) }
+            Spacer(Modifier.height(32.dp))
+            Text(t("Entra com a tua conta Google", "Sign in with your Google account"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(12.dp))
+            Text(
+                t("Assim podes guardar uma cópia na nuvem e passar tudo para outro telemóvel. Os teus registos ficam neste telemóvel; só vão para a nuvem se ligares a cópia.",
+                    "So you can keep a cloud backup and move everything to another phone. Your records stay on this phone; they only go to the cloud if you turn on the backup."),
+                style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            acc.message?.let {
+                Spacer(Modifier.height(16.dp))
+                Text(it, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
+            }
+            Spacer(Modifier.weight(1f))
+            Button(onClick = onSignIn, enabled = !acc.busy, modifier = Modifier.fillMaxWidth().height(54.dp)) {
+                if (acc.busy) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                else Text(t("Continuar com Google", "Continue with Google"))
+            }
+        }
+    }
+}

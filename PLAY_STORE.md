@@ -28,10 +28,9 @@ Your data stays on your phone. The cloud and the community only work if you sign
 
 ## "Data safety" form
 - Approximate location: used for stations and chargers, not stored by us. Chargers are requested from the Overpass server (OpenStreetMap), which receives the position.
-- Personal information (email, nickname) and car data: only with Google sign-in and with backup or community enabled; encrypted in transit; users can delete their account and data in the app.
+- Personal information: email and name from the Google sign-in (required on first launch). Nickname and car data only with backup or community enabled; encrypted in transit; users can delete their account and data in the app.
 - Photos: stay on the phone; they go to the cloud only if backup is turned on.
 - Community messages: stored in Firebase between the two users.
-- App activity: a random install ID and the app version, at most once a day, to count installs (not linked to the user).
 - No ads, no data sales.
 - Privacy policy link: the published document (required).
 
