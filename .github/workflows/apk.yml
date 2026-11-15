@@ -16,8 +16,19 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: '8.9' }
       - name: Firebase config (optional secret GOOGLE_SERVICES_JSON)
-        env: { GSJ: '${{ secrets.GOOGLE_SERVICES_JSON }}' }
-        run: if [ -n "$GSJ" ]; then printf '%s' "$GSJ" > app/google-services.json; echo "Firebase on"; else echo "Firebase off (local data only)"; fi
+        env:
+          GSJ: '${{ secrets.GOOGLE_SERVICES_JSON }}'
+          GH_TOKEN: '${{ github.token }}'
+        run: |
+          if [ -n "$GSJ" ]; then printf '%s' "$GSJ" > app/google-services.json; echo "Firebase on (secret)"; exit 0; fi
+          # Sem o segredo: recria o ficheiro a partir do último APK publicado (a configuração do Firebase vai dentro do APK).
+          if gh release download --repo "$GITHUB_REPOSITORY" --pattern cockpit.apk --dir "$RUNNER_TEMP" 2>/dev/null \
+             && python3 -m pip install -q androguard \
+             && python3 ci/gsj_from_apk.py "$RUNNER_TEMP/cockpit.apk" app/google-services.json; then
+            echo "Firebase on (from the last release)"
+          else
+            rm -f app/google-services.json; echo "Firebase off (local data only)"
+          fi
       - name: Signing key (your own if the KEYSTORE_B64 secret exists, otherwise the CI key)
         env:
           KB64: '${{ secrets.KEYSTORE_B64 }}'
