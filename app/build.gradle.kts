@@ -18,8 +18,8 @@ android {
         applicationId = "com.cockpit.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 14
-        versionName = "2.2"
+        versionCode = 15
+        versionName = "2.3"
         // Chave pública do Logo.dev (opcional). Pões em gradle.properties: logoDevKey=pk_xxx
         buildConfigField("String", "LOGO_DEV_KEY", "\"${project.findProperty("logoDevKey") ?: ""}\"")
         // Chave do Open Charge Map (opcional, grátis em openchargemap.org). Pões em gradle.properties: ocmKey=xxxx

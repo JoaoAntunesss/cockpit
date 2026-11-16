@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         AppLock.onReturn(this)
+        Plano.retomar.intValue++
     }
 
     override fun onStop() {
@@ -416,6 +417,9 @@ fun AppRoot(vm: MainVm, go: String?, onGoDone: () -> Unit) {
         AnimatedVisibility(onboarded && acc.configured && acc.email == null, enter = fadeIn(), exit = fadeOut(tween(300))) {
             SignInGate(acc) { (ctx as? Activity)?.let { vm.signIn(it) } }
         }
+        // Plano: 24 horas grátis, depois 1 €/mês ou 10 €/ano (só com a conta Google iniciada).
+        val email = acc.email
+        if (onboarded && acc.configured && email != null) PlanoGate(email) { vm.signOut() }
     }
 }
 
