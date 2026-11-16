@@ -203,6 +203,8 @@ fun AccountSheet(
                 }
                 else -> {
                     Text("Sessão iniciada: ${st.email}", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    PlanoSecao(st.email)
+                    HorizontalDivider()
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(tr("Guardar sozinho"))

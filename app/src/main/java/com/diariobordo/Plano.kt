@@ -42,6 +42,7 @@ object Plano {
     data class Estado(
         val estado: String, val fimTeste: Long = 0L, val ate: Long = 0L,
         val link: String = "", val linkAno: String = "", val email: String = "",
+        val cancelada: Boolean = false,
     )
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences("plano", Context.MODE_PRIVATE)
@@ -57,7 +58,7 @@ object Plano {
 
     private fun deJson(j: JSONObject) = Estado(
         j.optString("estado"), j.optLong("fimTeste"), j.optLong("ate"),
-        j.optString("link"), j.optString("linkAno"), j.optString("email"),
+        j.optString("link"), j.optString("linkAno"), j.optString("email"), j.optBoolean("cancelada"),
     )
 
     fun guardado(ctx: Context, email: String?): Estado? {
@@ -83,6 +84,25 @@ object Plano {
                 deJson(j)
             } finally { c.disconnect() }
         } catch (e: Exception) { null }
+    }
+
+    /** Link do portal do Stripe para gerir ou cancelar (ou a mensagem de erro). */
+    suspend fun gerir(): Pair<String?, String?> = withContext(Dispatchers.IO) {
+        try {
+            val user = FirebaseAuth.getInstance().currentUser ?: return@withContext null to t("Entra com a tua conta Google.", "Sign in with your Google account.")
+            val tok = user.getIdToken(false).await().token ?: return@withContext null to t("Entra com a tua conta Google.", "Sign in with your Google account.")
+            val c = (URL(API + "appGerir?app=cockpit").openConnection() as HttpURLConnection).apply {
+                connectTimeout = 10_000; readTimeout = 25_000
+                setRequestProperty("Authorization", "Bearer $tok")
+            }
+            try {
+                val ok = c.responseCode == 200
+                val corpo = (if (ok) c.inputStream else c.errorStream)?.bufferedReader()?.readText() ?: ""
+                val j = runCatching { JSONObject(corpo) }.getOrNull()
+                if (ok) j?.optString("url")?.takeIf { it.isNotBlank() } to null
+                else null to (j?.optString("erro")?.takeIf { it.isNotBlank() } ?: t("Não foi possível abrir a gestão da subscrição.", "Could not open subscription management."))
+            } finally { c.disconnect() }
+        } catch (e: Exception) { null to t("Sem ligação. Tenta outra vez daqui a pouco.", "No connection. Try again in a moment.") }
     }
 
     fun bloqueia(p: Estado?): Boolean {
@@ -159,6 +179,52 @@ private fun PlanoPagar(p: Plano.Estado, onSignOut: () -> Unit, onNovo: (Plano.Es
                 },
             ) { Text(if (aConfirmar) t("A confirmar…", "Checking…") else t("Já paguei", "I have paid")) }
             TextButton(onClick = onSignOut) { Text(t("Entrar com outra conta", "Use another account")) }
+        }
+    }
+}
+
+/** Secção "Subscrição" na folha da conta: estado do plano e botões para pagar, gerir ou cancelar. */
+@Composable
+fun PlanoSecao(email: String) {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var plano by remember(email) { mutableStateOf(Plano.guardado(ctx, email)) }
+    var aAbrir by remember { mutableStateOf(false) }
+    LaunchedEffect(email) { Plano.pedir(ctx, false)?.let { plano = it } }
+    val fmt = remember { java.text.SimpleDateFormat("d/MM/yyyy HH:mm", java.util.Locale.getDefault()) }
+    fun abrir(url: String) { try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {} }
+    val p = plano
+    val texto = when (p?.estado) {
+        "pago" -> if (p.ate > 0L) {
+            if (p.cancelada) t("Cancelada. Tens acesso até ", "Cancelled. You have access until ") + fmt.format(java.util.Date(p.ate)) + "."
+            else t("Paga. Renova a ", "Paid. Renews on ") + fmt.format(java.util.Date(p.ate)) + "."
+        } else t("Paga.", "Paid.")
+        "teste" -> t("Período grátis até ", "Free until ") + fmt.format(java.util.Date(p.fimTeste)) + t(". Depois 1 € por mês ou 10 € por ano.", ". Then €1 a month or €10 a year.")
+        "gratis" -> t("Grátis nesta conta.", "Free on this account.")
+        "pagar" -> t("Sem subscrição ativa.", "No active subscription.")
+        else -> t("A confirmar…", "Checking…")
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(t("Subscrição", "Subscription"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(texto, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (p?.estado == "teste" || p?.estado == "pagar") {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilledTonalButton(enabled = p.link.isNotBlank(), onClick = { abrir(p.link) }) { Text(t("1 € por mês", "€1 a month")) }
+                OutlinedButton(enabled = p.linkAno.isNotBlank(), onClick = { abrir(p.linkAno) }) { Text(t("10 € por ano", "€10 a year")) }
+            }
+        }
+        if (p?.estado == "pago") {
+            FilledTonalButton(
+                enabled = !aAbrir,
+                onClick = {
+                    aAbrir = true
+                    scope.launch {
+                        val (url, erro) = Plano.gerir()
+                        aAbrir = false
+                        if (url != null) abrir(url) else Toast.makeText(ctx, erro, Toast.LENGTH_LONG).show()
+                    }
+                },
+            ) { Text(if (aAbrir) t("A abrir…", "Opening…") else t("Gerir ou cancelar", "Manage or cancel")) }
         }
     }
 }
